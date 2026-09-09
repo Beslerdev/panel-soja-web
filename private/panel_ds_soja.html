@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DS Hnos — Panel de Campaña</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1:      #ffffff;
+    --page-plane:     #efe7d5;
+    --text-primary:   #23281c;
+    --text-secondary: #6b6555;
+    --text-muted:     #948d79;
+    --gridline:       #e6ddc6;
+    --baseline:       #cabf9e;
+    --border:         rgba(35,40,28,.12);
+    --header-bg:      #232b1a;
+    --header-text:    #f3efe2;
+    --accent:         #2f7d3f;
+    --accent-text:    #1e5e2c;
+    --series-1:       #c2410c;
+    --series-2:       #2f7d3f;
+    --series-3:       #b8860a;
+    --series-4:       #7c3aed;
+    --good:           #2f7d3f;
+    --good-text:      #1e5e2c;
+    --critical:       #b0392f;
+    --warning:        #b8860a;
+    --card-shadow:    0 1px 2px rgba(35,40,28,.05), 0 10px 28px -16px rgba(35,40,28,.22);
+    --card-shadow-hover: 0 2px 4px rgba(35,40,28,.06), 0 16px 34px -16px rgba(35,40,28,.28);
+    --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    --font-mono: "JetBrains Mono", "SF Mono", Consolas, "Roboto Mono", "Courier New", monospace;
+    --font-body: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-1:      #1e2317;
+    --page-plane:     #15170f;
+    --text-primary:   #f3efe2;
+    --text-secondary: #b7ad97;
+    --text-muted:     #837a68;
+    --gridline:       #2c3122;
+    --baseline:       #3c4130;
+    --border:         rgba(243,239,226,.12);
+    --header-bg:      #171d10;
+    --header-text:    #f3efe2;
+    --accent:         #4fae63;
+    --accent-text:    #7fd191;
+    --series-1:       #e0682c;
+    --series-2:       #4fae63;
+    --series-3:       #d9a52e;
+    --series-4:       #a374f0;
+    --good:           #4fae63;
+    --good-text:      #7fd191;
+    --critical:       #e2685c;
+    --warning:        #d9a52e;
+    --card-shadow:    0 1px 2px rgba(0,0,0,.35), 0 12px 30px -16px rgba(0,0,0,.55);
+    --card-shadow-hover: 0 2px 4px rgba(0,0,0,.4), 0 18px 38px -16px rgba(0,0,0,.6);
+    --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    --font-mono: "JetBrains Mono", "SF Mono", Consolas, "Roboto Mono", "Courier New", monospace;
+    --font-body: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: var(--font-body);
+    background: var(--page-plane); color: var(--text-primary); transition: background .2s, color .2s;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 0 60px; }
+  .inner { padding: 0 24px; }
+
+  .sticky-head {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--page-plane);
+    box-shadow: 0 4px 14px -6px rgba(0,0,0,.28);
+  }
+  header.topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 26px; margin-bottom: 0; flex-wrap: wrap; gap: 12px;
+    background: var(--header-bg); color: var(--header-text);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand .logo {
+    width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0;
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: center; color: #fff;
+  }
+  .brand .logo svg { width: 19px; height: 19px; stroke: #fff; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .brand .name { font-size: 15px; font-weight: 700; letter-spacing: -.005em; color: var(--header-text); }
+  .brand .sub { font-size: 12px; color: rgba(243,239,226,.62); margin-top: 1px; }
+  .topbar-actions { display: flex; align-items: center; gap: 10px; }
+  .badge-note {
+    font-size: 11.5px; font-weight: 600; letter-spacing: .01em; color: var(--header-text);
+    border: 1px solid rgba(243,239,226,.22); background: rgba(243,239,226,.08); padding: 6px 13px; border-radius: 20px;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .badge-note::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+  button.toggle {
+    font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; padding: 8px 15px; border-radius: 20px;
+    border: 1px solid rgba(243,239,226,.28); background: transparent; color: var(--header-text);
+    transition: background .15s, border-color .15s;
+  }
+  button.toggle:hover { background: rgba(243,239,226,.1); border-color: rgba(243,239,226,.4); }
+
+  nav.tabs {
+    display: flex; gap: 6px; flex-wrap: wrap; margin: 0;
+    padding: 14px 24px; background: var(--page-plane); border-bottom: 1px solid var(--border);
+  }
+  nav.tabs button {
+    font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; padding: 9px 16px;
+    border: 1px solid var(--border); background: var(--surface-1); color: var(--text-secondary); border-radius: 20px;
+    transition: background .12s, color .12s, border-color .12s, box-shadow .12s; box-shadow: var(--card-shadow);
+  }
+  nav.tabs button:hover:not(.active) { color: var(--text-primary); border-color: var(--text-muted); }
+  nav.tabs button.active { color: var(--header-text); background: var(--header-bg); border-color: var(--header-bg); }
+
+  .view { display: none; }
+  .view.active { display: block; animation: fadein .18s ease; }
+  @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+
+  .area-head { margin: 26px 0 22px; padding: 0 24px; }
+  .area-head .eyebrow {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--text-muted); margin-bottom: 7px;
+  }
+  .area-head h1 {
+    font-family: var(--font-display); font-weight: 400; font-style: italic; font-size: 32px; letter-spacing: -0.01em; margin: 0;
+    line-height: 1.1; color: var(--text-primary);
+  }
+  .area-head p { font-size: 13.5px; color: var(--text-secondary); margin: 7px 0 0; }
+
+  .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 22px; padding: 0 24px; }
+  .kpi-row.cols-4 { grid-template-columns: repeat(4, 1fr); }
+  .kpi-row.cols-6 { grid-template-columns: repeat(6, 1fr); }
+  .kpi-row.cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .kpi {
+    position: relative;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 16px;
+    padding: 20px 20px 18px; box-shadow: var(--card-shadow);
+    transition: box-shadow .18s ease, transform .18s ease;
+  }
+  .kpi:hover { box-shadow: var(--card-shadow-hover); transform: translateY(-2px); }
+  .kpi .icon-chip {
+    width: 40px; height: 40px; border-radius: 11px; margin-bottom: 16px;
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface-1));
+    display: flex; align-items: center; justify-content: center;
+  }
+  .kpi .icon-chip svg { width: 20px; height: 20px; stroke: var(--accent); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .kpi .label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); margin-bottom: 9px; }
+  .kpi .value { font-family: var(--font-body); font-size: 25px; font-weight: 700; letter-spacing: -0.015em; font-variant-numeric: proportional-nums; color: var(--text-primary); }
+  .kpi .value .unit { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-left: 3px; }
+  .kpi .note { font-size: 12px; color: var(--accent-text); margin-top: 7px; font-weight: 600; }
+  .kpi .spark { display: block; width: 100%; height: 26px; margin-top: 10px; overflow: visible; }
+  .kpi .spark path.spark-line {
+    fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    stroke-dasharray: 100; stroke-dashoffset: 100; animation: drawLine 1s cubic-bezier(.22,1,.36,1) forwards .3s;
+  }
+  .kpi .spark path.spark-fill { fill: var(--accent); opacity: 0; animation: sparkFadeIn .8s ease forwards .35s; }
+  @keyframes sparkFadeIn { to { opacity: .12; } }
+
+  .panel {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 16px;
+    padding: 20px 22px 18px; margin: 0 24px 18px; box-shadow: var(--card-shadow);
+    transition: box-shadow .18s ease;
+  }
+  .panel-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+  .panel-head h2 { font-size: 15px; margin: 0; font-weight: 700; letter-spacing: -0.005em; }
+  .panel-head .caption { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  .legend { display: flex; gap: 16px; font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+  .legend .item { display: flex; align-items: center; gap: 6px; }
+  .legend .swatch { width: 9px; height: 9px; border-radius: 2.5px; }
+
+  .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding: 0 24px; }
+  .chart-row.thirds { grid-template-columns: 1.2fr 1fr; }
+  .chart-row .panel { margin: 0; }
+  @media (max-width: 860px) {
+    .chart-row, .chart-row.thirds { grid-template-columns: 1fr; }
+    .kpi-row, .kpi-row.cols-4, .kpi-row.cols-6 { grid-template-columns: repeat(2,1fr); }
+  }
+
+  svg text { font-family: var(--font-body); }
+  .axis-label { fill: var(--text-muted); font-size: 10.5px; font-weight: 600; }
+  .gridline { stroke: var(--gridline); stroke-width: 1; }
+  .baseline { stroke: var(--baseline); stroke-width: 1; }
+  .bar {
+    cursor: pointer; transition: opacity .12s;
+    transform-box: fill-box; transform-origin: bottom;
+    animation: barGrow .55s cubic-bezier(.22,1,.36,1) backwards;
+  }
+  .bar:hover { opacity: .8; }
+  circle.bar { transform-origin: center; }
+  @keyframes barGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+  .dot-marker { animation: dotPop .35s cubic-bezier(.22,1,.36,1) backwards; }
+  @keyframes dotPop { from { transform: scale(0); } to { transform: scale(1); } }
+  .line-path { stroke-dasharray: 100; stroke-dashoffset: 100; animation: drawLine 1.15s cubic-bezier(.22,1,.36,1) forwards; }
+  @keyframes drawLine { to { stroke-dashoffset: 0; } }
+  .area-fill { opacity: 0; animation: areaFadeIn .9s ease forwards .4s; }
+  @keyframes areaFadeIn { to { opacity: 1; } }
+
+  .tooltip {
+    position: absolute; pointer-events: none; background: var(--header-bg); color: var(--header-text);
+    font-size: 12px; padding: 7px 10px; border-radius: 8px; opacity: 0; transform: translateY(4px);
+    transition: opacity .12s, transform .12s; white-space: nowrap; z-index: 5; box-shadow: 0 6px 18px rgba(0,0,0,.25);
+    font-weight: 600;
+  }
+  .tooltip.show { opacity: 1; transform: translateY(0); }
+  .tooltip .t-title { font-weight: 700; margin-bottom: 3px; }
+  .tooltip .t-row { display: flex; gap: 8px; align-items: center; }
+  .tooltip .dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+
+  table.data-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.data-table th, table.data-table td { padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--gridline); white-space: nowrap; }
+  table.data-table th:first-child, table.data-table td:first-child,
+  table.data-table th:nth-child(2), table.data-table td:nth-child(2) { text-align: left; }
+  table.wide-left th:nth-child(3), table.wide-left td:nth-child(3) { text-align: left; }
+  table.data-table thead th { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--header-text); font-weight: 700; background: var(--header-bg); }
+  table.data-table thead tr:first-child th:first-child { border-top-left-radius: 10px; }
+  table.data-table thead tr:first-child th:last-child { border-top-right-radius: 10px; }
+  table.data-table tbody tr:hover { background: var(--page-plane); }
+  table.data-table td.num { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+  .table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+  .table-scroll.max-h { max-height: 480px; overflow-y: auto; }
+  .table-scroll.max-h thead th { position: sticky; top: 0; z-index: 1; }
+  .table-scroll table { border: none; }
+  .table-scroll td:first-child, .table-scroll th:first-child { padding-left: 14px; }
+  .table-scroll td:last-child, .table-scroll th:last-child { padding-right: 14px; }
+
+  .pill-tag {
+    display: inline-flex; align-items: center; justify-content: center; min-width: 26px; height: 20px; padding: 0 8px;
+    border-radius: 20px; background: var(--header-bg); color: var(--header-text); font-size: 10px; font-weight: 700;
+  }
+  .mini-bar { display: inline-flex; align-items: center; gap: 8px; min-width: 90px; }
+  .mini-bar .track { flex: 1; height: 6px; border-radius: 4px; background: var(--gridline); overflow: hidden; }
+  .mini-bar .fill { height: 100%; border-radius: 4px; background: var(--accent); }
+  .mini-bar .pct { font-size: 11.5px; font-weight: 700; color: var(--text-secondary); font-variant-numeric: tabular-nums; width: 34px; text-align: right; }
+
+  .status-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; padding: 3px 10px; border-radius: 20px; font-weight: 700; }
+  .status-badge.warn { color: var(--warning); background: color-mix(in srgb, var(--warning) 15%, var(--surface-1)); }
+  .status-badge.ok { color: var(--good-text); background: color-mix(in srgb, var(--good) 15%, var(--surface-1)); }
+  .status-badge.crit { color: var(--critical); background: color-mix(in srgb, var(--critical) 15%, var(--surface-1)); }
+  .status-badge.info { color: var(--series-4); background: color-mix(in srgb, var(--series-4) 15%, var(--surface-1)); }
+  .status-badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+  .callout {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px 20px; margin: 0 24px 20px; flex-wrap: wrap; box-shadow: var(--card-shadow);
+  }
+  .callout.ok { background: color-mix(in srgb, var(--good) 8%, var(--surface-1)); }
+  .callout .big { font-size: 14.5px; font-weight: 700; margin-bottom: 3px; }
+  .callout .desc { font-size: 12.5px; color: var(--text-secondary); max-width: 640px; }
+
+  .funnel { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+  @media (max-width: 860px) { .funnel { grid-template-columns: repeat(2,1fr); } }
+  .funnel-step {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px; padding: 18px 18px 16px;
+    box-shadow: var(--card-shadow); transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .funnel-step:hover { transform: translateY(-2px); box-shadow: var(--card-shadow-hover); }
+  .funnel-step.s1 { background: color-mix(in srgb, var(--series-3) 16%, var(--surface-1)); }
+  .funnel-step.s2 { background: color-mix(in srgb, var(--series-4) 14%, var(--surface-1)); }
+  .funnel-step.s3 { background: color-mix(in srgb, var(--series-1) 14%, var(--surface-1)); }
+  .funnel-step.s4 { background: color-mix(in srgb, var(--accent) 16%, var(--surface-1)); }
+  .funnel-step .fs-label { font-size: 10.5px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 9px; }
+  .funnel-step .fs-count { font-size: 27px; font-weight: 700; letter-spacing: -0.01em; }
+  .funnel-step .fs-kg { font-size: 12px; color: var(--text-secondary); margin-top: 5px; font-weight: 600; }
+
+  footer.mock-footer { margin: 34px 24px 0; padding: 16px 18px; border: 1px dashed var(--border); border-radius: 12px; font-size: 12px; color: var(--text-muted); text-align: center; }
+
+  .sheet-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .sheet-pill {
+    font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; padding: 7px 14px; border-radius: 20px;
+    border: 1px solid var(--border); background: var(--page-plane); color: var(--text-secondary);
+    display: flex; align-items: center; gap: 6px; transition: background .12s, color .12s, border-color .12s;
+  }
+  .sheet-pill:hover { color: var(--text-primary); border-color: var(--text-muted); }
+  .sheet-pill.active { background: var(--header-bg); border-color: var(--header-bg); color: var(--header-text); }
+  .sheet-pill .tag { font-size: 9.5px; opacity: .85; border: 1px solid currentColor; border-radius: 8px; padding: 1px 6px; font-weight: 600; }
+
+  .excel-scroll { max-height: 640px; overflow: auto; border: 1px solid var(--border); border-radius: 10px; }
+  table.excel-grid { border-collapse: collapse; font-size: 12px; background: var(--surface-1); }
+  table.excel-grid th, table.excel-grid td {
+    border: 1px solid var(--gridline); padding: 5px 10px; white-space: nowrap; text-align: left; font-variant-numeric: tabular-nums; font-family: var(--font-mono);
+  }
+  table.excel-grid thead th {
+    position: sticky; top: 0; z-index: 2; background: var(--page-plane); color: var(--text-primary);
+    font-weight: 700; text-align: center; min-width: 34px; font-family: var(--font-body);
+  }
+  table.excel-grid td.rownum, table.excel-grid th.rownum {
+    position: sticky; left: 0; z-index: 1; background: var(--page-plane); color: var(--text-primary);
+    font-weight: 700; text-align: center; min-width: 30px; font-family: var(--font-body);
+  }
+  table.excel-grid thead th.rownum { z-index: 3; }
+  .excel-empty { padding: 20px; color: var(--text-muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<div id="loadingOverlay" style="position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;background:var(--page-plane,#f4f5f7);">
+  <div class="loading-box" style="text-align:center;color:var(--text-muted,#666);font-family:inherit;">
+    <div style="font-size:15px;">Cargando datos de la campaña…</div>
+  </div>
+</div>
+<div class="wrap">
+
+  <div class="sticky-head">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo"><svg viewBox="0 0 24 24"><path d="M4 20c0-8 5-15 16-16-1 11-8 16-16 16Z"/><path d="M4 20c3-5 7-9 12-12"/></svg></div>
+        <div>
+          <div class="name">DS Hnos — Panel de Campaña</div>
+          <div class="sub">Soja 25/26 · <span id="lastUpdate">datos en vivo desde Supabase</span></div>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <span class="badge-note" id="userNombre"></span>
+        <button class="toggle" id="logoutBtn">Cerrar sesión</button>
+        <button class="toggle" id="themeToggle">Modo oscuro</button>
+      </div>
+    </header>
+
+    <nav class="tabs" id="tabs">
+      <button data-view="comercial" class="active">Comercial</button>
+      <button data-view="balanza">Balanza</button>
+      <button data-view="produccion">Producción</button>
+      <button data-view="pedidos">Estado de pedidos</button>
+      <button data-view="logistica">Despachos</button>
+      <button data-view="stock">Stock de empaque</button>
+    </nav>
+  </div>
+
+  <!-- ===================== COMERCIAL ===================== -->
+  <section class="view active" id="view-comercial">
+    <div class="area-head"><div class="eyebrow">ÁREA 01</div><h1>Comercial</h1><p>Ventas de la campaña — pedidos, clientes y evolución</p></div>
+    <div class="kpi-row" id="kpiVentas"></div>
+    <div class="callout ok" id="calloutChequeo"></div>
+
+    <div class="chart-row">
+      <div class="panel">
+        <div class="panel-head"><div><h2>Kg vendidos por variedad</h2><div class="caption">Campaña 25/26</div></div></div>
+        <div style="position:relative;">
+          <svg id="chartVariedad" viewBox="0 0 560 280" style="width:100%; height:auto; display:block;"></svg>
+          <div class="tooltip" id="ttVariedad"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div><h2>Kg vendidos por vendedor</h2><div class="caption">Campaña 25/26</div></div></div>
+        <div style="position:relative;">
+          <svg id="chartVendedor" viewBox="0 0 560 280" style="width:100%; height:auto; display:block;"></svg>
+          <div class="tooltip" id="ttVendedor"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h2>Evolución de ventas</h2><div class="caption">Kg vendidos por fecha de pedido</div></div></div>
+      <div style="position:relative;">
+        <svg id="chartTimeline" viewBox="0 0 1160 240" style="width:100%; height:auto; display:block;"></svg>
+        <div class="tooltip" id="ttTimeline"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h2>Detalle de pedidos</h2><div class="caption" id="captionVentasTabla"></div></div></div>
+      <div class="table-scroll max-h">
+        <table class="data-table wide-left">
+          <thead><tr><th>Pedido</th><th>Fecha</th><th>Cliente</th><th>Variedad</th><th>Cantidad</th><th>Presentación</th><th>Vendedor</th><th>Entrega</th><th>Kg</th></tr></thead>
+          <tbody id="tablaVentas"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== BALANZA ===================== -->
+  <section class="view" id="view-balanza">
+    <div class="area-head"><div class="eyebrow">ÁREA 02</div><h1>Balanza</h1><p>Ingreso de grano — camiones, campos de origen y merma</p></div>
+    <div class="kpi-row cols-4" id="kpiBalanza"></div>
+
+    <div class="chart-row">
+      <div class="panel">
+        <div class="panel-head"><div><h2>Kg ingresados por variedad</h2><div class="caption">Grano en balanza</div></div></div>
+        <div style="position:relative;">
+          <svg id="chartBalVariedad" viewBox="0 0 560 280" style="width:100%; height:auto; display:block;"></svg>
+          <div class="tooltip" id="ttBalVariedad"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div><h2>Kg ingresados por campo</h2><div class="caption">Origen de la mercadería</div></div></div>
+        <div style="position:relative;">
+          <svg id="chartBalCampo" viewBox="0 0 560 280" style="width:100%; height:auto; display:block;"></svg>
+          <div class="tooltip" id="ttBalCampo"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h2>Evolución de ingresos</h2><div class="caption">Kg netos por fecha</div></div></div>
+      <div style="position:relative;">
+        <svg id="chartBalTimeline" viewBox="0 0 1160 220" style="width:100%; height:auto; display:block;"></svg>
+        <div class="tooltip" id="ttBalTimeline"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h2>Detalle de camiones</h2><div class="caption" id="captionBalanzaTabla"></div></div></div>
+      <div class="table-scroll max-h">
+        <table class="data-table wide-left">
+          <thead><tr><th>Fecha</th><th>Chofer</th><th>Campo</th><th>Variedad</th><th>Categoría</th><th>Silo</th><th>Neto (kg)</th><th>Merma (kg)</th></tr></thead>
+          <tbody id="tablaBalanza"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PRODUCCION ===================== -->
+  <section class="view" id="view-produccion">
+    <div class="area-head"><div class="eyebrow">ÁREA 03</div><h1>Producción</h1><p>Planta de procesamiento — rendimiento, calidad y plan de curado</p></div>
+    <div class="kpi-row cols-6" id="kpiProduccion"></div>
+
+    <div class="chart-row">
+      <div class="panel">
+        <div class="panel-head"><div><h2>Rendimiento promedio por variedad</h2><div class="caption">Kg/hora en planta</div></div></div>
+        <div style="position:relative;">
+          <svg id="chartRendVariedad" viewBox="0 0 560 260" style="width:100%; height:auto; display:block;"></svg>
+          <div class="tooltip" id="ttRendVariedad"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div><h2>Plan de curado — próximas semanas</h2><div class="caption">Kg netos a curar por semana de entrega</div></div></div>
+        <div style="position:relative;">
+          <svg id="chartCurado" viewBox="0 0 560 260" style="width:100%; height:auto; display:block;"></svg>
+          <div class="tooltip" id="ttCurado"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h2>Lotes procesados en planta</h2><div class="caption" id="captionLotesTabla"></div></div></div>
+      <div class="table-scroll max-h">
+        <table class="data-table wide-left">
+          <thead><tr><th>Lote final</th><th>Procedencia</th><th>Variedad</th><th>Kg</th><th>Kg/hr</th><th>Fin</th><th>Calidad</th><th>Parada</th></tr></thead>
+          <tbody id="tablaLotes"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h2>Plan de curado por variedad</h2><div class="caption">Pendiente vs. ya curado</div></div></div>
+      <div class="table-scroll">
+        <table class="data-table wide-left">
+          <thead><tr><th>Variedad</th><th>Tratamiento</th><th>Pendiente total (kg)</th><th>Ya curado (kg)</th><th>Neto a curar (kg)</th></tr></thead>
+          <tbody id="tablaCurado"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="kpi-row cols-3" id="kpiCurado"></div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h2>Curado — detalle por lote</h2><div class="caption">Hoja "Intermedio curado" — se va completando a medida que avanza esa etapa de la campaña</div></div></div>
+      <div class="table-scroll">
+        <table class="data-table wide-left">
+          <thead><tr><th>Lote intermedio</th><th>Lote final</th><th>Variedad</th><th>Tratamiento</th><th>Kg producidos</th><th>Kg/hs</th><th>Horas prod.</th><th>Área final</th></tr></thead>
+          <tbody id="tablaCuradoDetalle"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PEDIDOS (ESTADO / FUNNEL) ===================== -->
+  <section class="view" id="view-pedidos">
+    <div class="area-head"><div class="eyebrow">ÁREA 04</div><h1>Estado de pedidos</h1><p>Ventas → Producción → Despachos — mismo pedido, distinta etapa</p></div>
+    <div class="panel" style="margin-bottom:18px;">
+      <div class="panel-head"><div><h2>Recorrido de un pedido</h2><div class="caption">Cantidad de líneas y kg en cada etapa</div></div></div>
+      <div class="funnel" id="funnelEstados"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h2>Todas las líneas de pedido</h2><div class="caption" id="captionPedidosTabla"></div></div></div>
+      <div class="table-scroll max-h">
+        <table class="data-table wide-left">
+          <thead><tr><th>Pedido</th><th>Cliente</th><th>Variedad</th><th>Presentación</th><th>Kg</th><th>Lote final</th><th>Entrega</th><th>Estado</th></tr></thead>
+          <tbody id="tablaPedidos"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== LOGISTICA / DESPACHOS ===================== -->
+  <section class="view" id="view-logistica">
+    <div class="area-head"><div class="eyebrow">ÁREA 05</div><h1>Despachos</h1><p>Camiones que salen de planta con producto terminado</p></div>
+    <div class="kpi-row cols-2" id="kpiLogistica"></div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h2>Despachos registrados</h2><div class="caption">Hoja "Despacho" — se va completando a medida que avanza la campaña. Los indicadores solo cuentan pedidos con estado "Despachado"; los pedidos en planta, cargados o sin estado se muestran igual en la tabla pero no suman.</div></div></div>
+      <div class="table-scroll">
+        <table class="data-table wide-left">
+          <thead><tr><th>Pedido</th><th>Cliente</th><th>Día de carga</th><th>Variedad</th><th>Presentación</th><th>Kg</th><th>Lote final</th><th>Estado</th></tr></thead>
+          <tbody id="tablaDespacho"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== STOCK ===================== -->
+  <section class="view" id="view-stock">
+    <div class="area-head"><div class="eyebrow">ÁREA 06</div><h1>Stock de empaque</h1><p>Big bags y bolsas disponibles para envasado</p></div>
+    <div class="kpi-row cols-2" id="kpiStock"></div>
+
+    <div class="chart-row">
+      <div class="panel">
+        <div class="panel-head">
+          <div><h2>Big bags por marca</h2><div class="caption">Estado del empaque disponible</div></div>
+          <div class="legend">
+            <span class="item"><span class="swatch" style="background:var(--series-1)"></span>Pintados</span>
+            <span class="item"><span class="swatch" style="background:var(--series-2)"></span>Sin pintar</span>
+            <span class="item"><span class="swatch" style="background:var(--series-3)"></span>Nuevos</span>
+          </div>
+        </div>
+        <div style="position:relative;">
+          <svg id="chartBigBags" viewBox="0 0 560 280" style="width:100%; height:auto; display:block;"></svg>
+          <div class="tooltip" id="ttBigBags"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div><h2>Bolsas por tipo de semilla</h2><div class="caption">Trigo vs. Soja</div></div></div>
+        <div style="position:relative;">
+          <svg id="chartBolsas" viewBox="0 0 420 280" style="width:100%; height:auto; display:block;"></svg>
+          <div class="tooltip" id="ttBolsas"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h2>Detalle de big bags por marca</h2></div></div>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead><tr><th>Marca</th><th>Pintados</th><th>Sin pintar</th><th>Nuevos</th><th>Total</th><th>% del total</th></tr></thead>
+          <tbody id="tablaStock"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <footer class="mock-footer">
+    Datos en vivo desde Supabase — actualizados a medida que se cargan en planta.
+  </footer>
+</div>
+
+<script>
+let DATA = null;
+</script>
+<script>
+
+</script>
+<script>
+// Minimal hand-drawn 24x24 stroke icon set for KPI icon-chips
+const ICONS = {
+  package: '<path d="M21 8l-9-5-9 5 9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/>',
+  'trending-up': '<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+  users: '<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 8.5a2.5 2.5 0 1 0-1-4.8"/><path d="M15 14c2.8.5 5 2.8 5 6"/>',
+  scale: '<path d="M12 3v18"/><path d="M5 7h14"/><path d="M5 7l-3 6a3 3 0 0 0 6 0Z"/><path d="M19 7l-3 6a3 3 0 0 0 6 0Z"/><path d="M8 21h8"/>',
+  truck: '<path d="M3 17V7a1 1 0 0 1 1-1h9v11"/><path d="M13 10h4l3 3v4h-7"/><circle cx="7" cy="18" r="1.8"/><circle cx="17" cy="18" r="1.8"/>',
+  layers: '<path d="M12 2l9 5-9 5-9-5 9-5Z"/><path d="M3 12l9 5 9-5"/>',
+  'map-pin': '<path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z"/><circle cx="12" cy="9" r="2.3"/>',
+  gauge: '<path d="M4 14a8 8 0 1 1 16 0"/><path d="M12 14l3.5-3.5"/><path d="M12 14v.01"/>',
+  'alert-triangle': '<path d="M12 3l10 18H2L12 3Z"/><path d="M12 9v5"/><path d="M12 17v.01"/>',
+  'check-circle': '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+};
+
+const themeBtn = document.getElementById('themeToggle');
+const root = document.documentElement;
+themeBtn.addEventListener('click', () => {
+  const isDark = root.getAttribute('data-theme') === 'dark';
+  root.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  themeBtn.textContent = isDark ? 'Modo oscuro' : 'Modo claro';
+  renderAll();
+});
+
+document.getElementById('tabs').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-view]');
+  if (!btn) return;
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + btn.dataset.view).classList.add('active');
+});
+
+function fmt(n) { return Math.round(n).toLocaleString('es-AR'); }
+function fmt1(n) { return n.toLocaleString('es-AR', { maximumFractionDigits: 1 }); }
+function pct(n) { return n.toLocaleString('es-AR', { maximumFractionDigits: 1 }) + '%'; }
+function formatNum(v, decimals) {
+  return decimals > 0
+    ? v.toLocaleString('es-AR', { maximumFractionDigits: decimals, minimumFractionDigits: decimals })
+    : Math.round(v).toLocaleString('es-AR');
+}
+
+function positionTooltip(tooltip, svg, e) {
+  const parentBounds = svg.parentElement.getBoundingClientRect();
+  tooltip.style.left = (e.clientX - parentBounds.left + 12) + 'px';
+  tooltip.style.top = (e.clientY - parentBounds.top - 36) + 'px';
+  tooltip.classList.add('show');
+}
+
+// A bar with rounded top corners, square baseline — the mark spec (4px cap, never fill the slot).
+function barPath(x, y, w, h, r) {
+  if (h <= 0) return '';
+  r = Math.max(0, Math.min(r, w / 2, h));
+  if (r === 0) return `M${x},${y+h} L${x},${y} L${x+w},${y} L${x+w},${y+h} Z`;
+  return `M${x},${y+h} L${x},${y+r} Q${x},${y} ${x+r},${y} L${x+w-r},${y} Q${x+w},${y} ${x+w},${y+r} L${x+w},${y+h} Z`;
+}
+
+function gradientDefs(svgId, colorVars) {
+  return '<defs>' + colorVars.map((v, si) =>
+    `<linearGradient id="grad-${svgId}-${si}" x1="0" y1="0" x2="0" y2="1">
+       <stop offset="0%" style="stop-color:var(${v});stop-opacity:1"/>
+       <stop offset="100%" style="stop-color:var(${v});stop-opacity:.68"/>
+     </linearGradient>`
+  ).join('') + '</defs>';
+}
+
+// Generic single/multi-series grouped or stacked bar chart
+function drawBarChart(svgId, ttId, categories, series, opts) {
+  opts = opts || {};
+  const svg = document.getElementById(svgId);
+  const tooltip = document.getElementById(ttId);
+  const vb = svg.viewBox.baseVal;
+  const W = vb.width, H = vb.height;
+  const padL = opts.padL || 70, padB = opts.padB || (opts.rotateLabels ? 78 : 50), padT = 10, padR = 10;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const maxVal = Math.max(1, ...categories.map((c,i) => series.reduce((s,ser) => opts.stacked ? s + (ser.values[i]||0) : Math.max(s, ser.values[i]||0), 0))) * 1.15;
+  const groupW = plotW / categories.length;
+  const barW = Math.min(opts.stacked ? groupW * 0.5 : groupW * 0.6 / series.length, 24);
+  const gap = 3;
+  const colorVars = series.length === 1 ? [opts.colorVar || '--accent'] : ['--series-1','--series-2','--series-3','--series-4'];
+
+  let svgContent = gradientDefs(svgId, colorVars);
+  const steps = 4;
+  for (let i = 0; i <= steps; i++) {
+    const y = padT + plotH - (plotH * i / steps);
+    svgContent += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" class="gridline" />`;
+    svgContent += `<text x="${padL-8}" y="${y+3}" text-anchor="end" class="axis-label">${fmt(maxVal*i/steps)}</text>`;
+  }
+  svgContent += `<line x1="${padL}" y1="${padT+plotH}" x2="${W-padR}" y2="${padT+plotH}" class="baseline" />`;
+
+  let barIndex = 0;
+  categories.forEach((cat, i) => {
+    const gx = padL + i * groupW + groupW/2;
+    if (opts.stacked) {
+      let yCursor = padT + plotH;
+      series.forEach((ser, si) => {
+        const val = ser.values[i] || 0;
+        const h = (val / maxVal) * plotH;
+        const y = yCursor - h;
+        const isTop = si === series.length - 1;
+        const d = barPath(gx-barW/2, y, barW, Math.max(h,0), isTop ? 4 : 0);
+        const delay = (barIndex++ * 22) % 480;
+        svgContent += `<path class="bar" style="animation-delay:${delay}ms" data-cat="${cat}" data-key="${ser.name}" data-val="${val}" data-series="${si}" d="${d}" fill="url(#grad-${svgId}-${si})" />`;
+        yCursor -= h;
+      });
+    } else {
+      const totalW = barW * series.length + gap * (series.length-1);
+      series.forEach((ser, si) => {
+        const val = ser.values[i] || 0;
+        const h = Math.max((val / maxVal) * plotH, val > 0 ? 2 : 0);
+        const x = gx - totalW/2 + si*(barW+gap);
+        const y = padT + plotH - h;
+        const d = barPath(x, y, barW, h, 4);
+        const delay = (barIndex++ * 22) % 480;
+        svgContent += `<path class="bar" style="animation-delay:${delay}ms" data-cat="${cat}" data-key="${ser.name}" data-val="${val}" data-series="${si}" d="${d}" fill="url(#grad-${svgId}-${si})" />`;
+      });
+    }
+    const maxLen = opts.rotateLabels ? 22 : 12;
+    const label = String(cat).length > maxLen ? String(cat).slice(0,maxLen-1)+'…' : cat;
+    if (opts.rotateLabels) {
+      svgContent += `<text x="${gx}" y="${padT+plotH+14}" text-anchor="end" class="axis-label" transform="rotate(-40 ${gx} ${padT+plotH+14})">${label}</text>`;
+    } else {
+      svgContent += `<text x="${gx}" y="${padT+plotH+18}" text-anchor="middle" class="axis-label">${label}</text>`;
+    }
+  });
+
+  svg.innerHTML = svgContent;
+  svg.querySelectorAll('.bar').forEach(rect => {
+    rect.addEventListener('mousemove', (e) => {
+      const cat = rect.dataset.cat, key = rect.dataset.key, val = parseFloat(rect.dataset.val), si = rect.dataset.series;
+      tooltip.innerHTML = `<div class="t-title">${cat}</div><div class="t-row"><span class="dot" style="background:var(${colorVars[si]})"></span>${key}: ${fmt(val)}${opts.unit||''}</div>`;
+      positionTooltip(tooltip, svg, e);
+    });
+    rect.addEventListener('mouseleave', () => tooltip.classList.remove('show'));
+  });
+}
+
+// Catmull-Rom -> cubic Bezier smoothing for a natural, non-jagged curve
+function smoothPath(pts) {
+  if (pts.length < 3) return 'M' + pts.map(p => p.join(',')).join(' L');
+  let d = `M${pts[0][0]},${pts[0][1]}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i === 0 ? 0 : i - 1];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[i + 2] || p2;
+    const c1x = p1[0] + (p2[0] - p0[0]) / 6;
+    const c1y = p1[1] + (p2[1] - p0[1]) / 6;
+    const c2x = p2[0] - (p3[0] - p1[0]) / 6;
+    const c2y = p2[1] - (p3[1] - p1[1]) / 6;
+    d += ` C${c1x},${c1y} ${c2x},${c2y} ${p2[0]},${p2[1]}`;
+  }
+  return d;
+}
+
+function drawLineChart(svgId, ttId, points, opts) {
+  opts = opts || {};
+  const colorVar = opts.colorVar || '--accent';
+  const svg = document.getElementById(svgId);
+  const tooltip = document.getElementById(ttId);
+  const vb = svg.viewBox.baseVal;
+  const W = vb.width, H = vb.height;
+  const padL = 70, padB = 40, padT = 14, padR = 20;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const maxVal = Math.max(1, ...points.map(p=>p.v)) * 1.15;
+  const stepX = points.length > 1 ? plotW / (points.length - 1) : 0;
+
+  let svgContent = `<defs>
+    <linearGradient id="areaGrad-${svgId}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" style="stop-color:var(${colorVar});stop-opacity:.32"/>
+      <stop offset="100%" style="stop-color:var(${colorVar});stop-opacity:0"/>
+    </linearGradient>
+  </defs>`;
+  const steps = 4;
+  for (let i = 0; i <= steps; i++) {
+    const y = padT + plotH - (plotH * i / steps);
+    svgContent += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" class="gridline" />`;
+    svgContent += `<text x="${padL-8}" y="${y+3}" text-anchor="end" class="axis-label">${fmt(maxVal*i/steps)}</text>`;
+  }
+  svgContent += `<line x1="${padL}" y1="${padT+plotH}" x2="${W-padR}" y2="${padT+plotH}" class="baseline" />`;
+
+  const pts = points.map((p,i) => [padL + i*stepX, padT + plotH - (p.v/maxVal)*plotH]);
+  const curve = smoothPath(pts);
+  const areaPath = `M${pts[0][0]},${padT+plotH} ` + curve.slice(curve.indexOf(' ')+1) + ` L${pts[pts.length-1][0]},${padT+plotH} Z`;
+  svgContent += `<path class="area-fill" d="${areaPath}" fill="url(#areaGrad-${svgId})" />`;
+  svgContent += `<path class="line-path" pathLength="100" d="${curve}" fill="none" stroke="var(${colorVar})" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />`;
+  const skip = Math.max(1, Math.ceil(points.length / 16));
+  pts.forEach((p,i) => {
+    const delay = 900 + i * 18;
+    svgContent += `<circle class="bar dot-marker" style="animation-delay:${delay}ms" data-m="${points[i].label}" data-v="${points[i].v}" cx="${p[0]}" cy="${p[1]}" r="4.5" fill="var(${colorVar})" stroke="var(--surface-1)" stroke-width="2" />`;
+    if (i % skip === 0 || i === pts.length-1) {
+      svgContent += `<text x="${p[0]}" y="${padT+plotH+18}" text-anchor="middle" class="axis-label">${points[i].label}</text>`;
+    }
+  });
+  svg.innerHTML = svgContent;
+  svg.querySelectorAll('circle').forEach(c => {
+    c.addEventListener('mousemove', (e) => {
+      tooltip.innerHTML = `<div class="t-title">${c.dataset.m}</div><div class="t-row"><span class="dot" style="background:var(${colorVar})"></span>${fmt(c.dataset.v)} kg</div>`;
+      positionTooltip(tooltip, svg, e);
+    });
+    c.addEventListener('mouseleave', () => tooltip.classList.remove('show'));
+  });
+}
+
+// Small inline sparkline (trend, no axes) for a KPI card
+function sparklineSvg(values) {
+  if (!values || values.length < 2) return '';
+  const w = 100, h = 26;
+  const max = Math.max(...values), min = Math.min(...values, 0);
+  const range = (max - min) || 1;
+  const stepX = w / (values.length - 1);
+  const pts = values.map((v,i) => [i*stepX, h - ((v-min)/range)*h*0.86 - 2]);
+  const linePath = smoothPath(pts);
+  const areaPath = `M${pts[0][0]},${h} ` + linePath.slice(linePath.indexOf(' ')+1) + ` L${pts[pts.length-1][0]},${h} Z`;
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <path class="spark-fill" d="${areaPath}"></path>
+    <path class="spark-line" pathLength="100" d="${linePath}"></path>
+  </svg>`;
+}
+
+// KPI card with animated count-up value and an optional inline trend sparkline
+function kpiCard(label, value, opts) {
+  if (typeof opts === 'string') opts = { note: opts };
+  opts = opts || {};
+  const isNum = typeof value === 'number';
+  const decimals = opts.decimals || 0;
+  const valueHtml = isNum
+    ? `<span class="value-num" data-target="${value}" data-decimals="${decimals}">0</span>${opts.unit ? `<span class="unit">${opts.unit}</span>` : ''}`
+    : `${value}${opts.unit ? `<span class="unit">${opts.unit}</span>` : ''}`;
+  const sparkHtml = sparklineSvg(opts.spark);
+  const iconSvg = ICONS[opts.icon] || ICONS.package;
+  return `<div class="kpi">
+    <div class="icon-chip"><svg viewBox="0 0 24 24">${iconSvg}</svg></div>
+    <div class="label">${label}</div>
+    <div class="value">${valueHtml}</div>
+    ${opts.note ? `<div class="note">${opts.note}</div>` : ''}
+    ${sparkHtml}
+  </div>`;
+}
+
+// Animate every not-yet-animated .value-num in view (easeOutExpo count-up)
+function animateCountUp() {
+  document.querySelectorAll('.value-num[data-target]').forEach(el => {
+    const target = parseFloat(el.dataset.target);
+    const decimals = parseInt(el.dataset.decimals, 10) || 0;
+    if (!isFinite(target)) { el.textContent = el.dataset.target; return; }
+    const dur = 900;
+    const t0 = performance.now();
+    function tick(now) {
+      const p = Math.min(1, (now - t0) / dur);
+      const eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = formatNum(target * eased, decimals);
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  });
+}
+
+const ESTADO_ORDER = ['4- Procesar', '3- En Proceso', '2- Terminado', '1- Despachado'];
+const ESTADO_LABELS = { '4- Procesar':'Por procesar', '3- En Proceso':'En proceso', '2- Terminado':'Terminado', '1- Despachado':'Despachado' };
+const ESTADO_CLASS = { '4- Procesar':'s1', '3- En Proceso':'s2', '2- Terminado':'s3', '1- Despachado':'s4' };
+
+function renderAll() {
+  // ================= COMERCIAL =================
+  document.getElementById('kpiVentas').innerHTML = [
+    kpiCard('Total vendido', DATA.kpi_ventas.total_kg, {unit:' kg', spark: Object.values(DATA.por_fecha), icon:'trending-up'}),
+    kpiCard('Pedidos', DATA.kpi_ventas.pedidos, {icon:'layers'}),
+    kpiCard('Clientes', DATA.kpi_ventas.clientes, {icon:'users'}),
+  ].join('');
+  document.getElementById('calloutChequeo').innerHTML = `
+    <div><div class="big">Datos en vivo</div><div class="desc">Conectado directo a la base de datos — cada carga en planta se refleja acá sin pasos intermedios.</div></div>
+    <span class="status-badge ok">Al día</span>`;
+
+  const variedades = Object.keys(DATA.por_variedad);
+  drawBarChart('chartVariedad', 'ttVariedad', variedades, [{name:'Kg', values: variedades.map(v=>DATA.por_variedad[v])}], {unit:' kg', rotateLabels:true});
+  const vendedores = Object.keys(DATA.por_vendedor);
+  drawBarChart('chartVendedor', 'ttVendedor', vendedores, [{name:'Kg', values: vendedores.map(v=>DATA.por_vendedor[v])}], {unit:' kg', rotateLabels:true});
+  const fechas = Object.keys(DATA.por_fecha);
+  drawLineChart('chartTimeline', 'ttTimeline', fechas.map(f => ({label: f.slice(5), v: DATA.por_fecha[f]})));
+
+  document.getElementById('captionVentasTabla').textContent = DATA.ventas.length + ' líneas de venta';
+  document.getElementById('tablaVentas').innerHTML = DATA.ventas
+    .slice().sort((a,b)=> a.fecha.localeCompare(b.fecha))
+    .map(v => `<tr>
+      <td>${v.vta_id}</td><td>${v.fecha}</td><td>${v.cliente}</td><td>${v.variedad}</td>
+      <td class="num">${fmt1(v.cantidad)}</td><td>${v.pack}</td><td>${v.vendedor}</td>
+      <td>${v.fecha_entrega || '—'}</td><td class="num">${fmt(v.kg_total)}</td>
+    </tr>`).join('');
+
+  // ================= BALANZA =================
+  document.getElementById('kpiBalanza').innerHTML = [
+    kpiCard('Grano ingresado', DATA.kpi_balanza.total_neto, {unit:' kg', spark: Object.values(DATA.bal_por_fecha), icon:'scale'}),
+    kpiCard('Camiones', DATA.kpi_balanza.camiones, {icon:'truck'}),
+    kpiCard('Campos de origen', DATA.kpi_balanza.campos, {icon:'map-pin'}),
+    kpiCard('Merma promedio', DATA.kpi_balanza.merma_prom_pct, {unit:'%', decimals:1, note:'sobre el neto ingresado', icon:'gauge'}),
+  ].join('');
+  const balVar = Object.keys(DATA.bal_por_variedad);
+  drawBarChart('chartBalVariedad', 'ttBalVariedad', balVar, [{name:'Kg', values: balVar.map(v=>DATA.bal_por_variedad[v])}], {unit:' kg', rotateLabels:true});
+  const balCampo = Object.keys(DATA.bal_por_campo);
+  drawBarChart('chartBalCampo', 'ttBalCampo', balCampo, [{name:'Kg', values: balCampo.map(v=>DATA.bal_por_campo[v])}], {unit:' kg', rotateLabels:true});
+  const balFechas = Object.keys(DATA.bal_por_fecha);
+  drawLineChart('chartBalTimeline', 'ttBalTimeline', balFechas.map(f => ({label: f.slice(5), v: DATA.bal_por_fecha[f]})));
+
+  document.getElementById('captionBalanzaTabla').textContent = DATA.balanza.length + ' camiones registrados';
+  document.getElementById('tablaBalanza').innerHTML = DATA.balanza
+    .slice().sort((a,b)=> a.fecha.localeCompare(b.fecha))
+    .map(b => `<tr>
+      <td>${b.fecha}</td><td>${b.chofer}</td><td>${b.campo}</td><td>${b.variedad}</td>
+      <td>${b.categoria}</td><td>${b.silo}</td><td class="num">${fmt(b.neto)}</td><td class="num">${fmt1(b.merma + b.merma_viento)}</td>
+    </tr>`).join('');
+
+  // ================= PRODUCCION =================
+  const okCal = DATA.calidad_counts['Si'] || 0;
+  document.getElementById('kpiProduccion').innerHTML = [
+    kpiCard('Procesado en planta', DATA.kpi_planta.kg_procesado, {unit:' kg', icon:'package'}),
+    kpiCard('Rendimiento prom.', DATA.kpi_planta.rendimiento_prom, {unit:' kg/hr', icon:'trending-up'}),
+    kpiCard('Lotes procesados', DATA.kpi_planta.lotes, {icon:'layers'}),
+    kpiCard('Paradas registradas', DATA.kpi_planta.paradas, {icon:'alert-triangle'}),
+    kpiCard('Calidad OK', okCal + ' / ' + DATA.kpi_planta.lotes, {note:'lotes aprobados en laboratorio', icon:'check-circle'}),
+    kpiCard('Horas de planta', DATA.calendario_total_gessi + DATA.calendario_total_blomar, {unit:' hs', note:'Gessi + Blomar, campaña completa', icon:'clock'}),
+  ].join('');
+  const rendVar = Object.keys(DATA.int_rendimiento_var);
+  drawBarChart('chartRendVariedad', 'ttRendVariedad', rendVar, [{name:'Kg/hr', values: rendVar.map(v=>Math.round(DATA.int_rendimiento_var[v]))}], {unit:' kg/hr', rotateLabels:true});
+  const curadoWeeks = DATA.plan_curado_weekly.filter(w => w.semana !== 'Sin fecha');
+  drawBarChart('chartCurado', 'ttCurado', curadoWeeks.map(w=>w.semana.slice(5)), [{name:'Kg a curar', values: curadoWeeks.map(w=>w.kg)}], {unit:' kg'});
+
+  document.getElementById('captionLotesTabla').textContent = DATA.lotes.length + ' lotes procesados';
+  document.getElementById('tablaLotes').innerHTML = DATA.lotes.map(l => {
+    const calMap = {'Si':'<span class="status-badge ok">OK</span>','REPROCESAR':'<span class="status-badge crit">Reprocesar</span>','CURADO':'<span class="status-badge info">Curado</span>'};
+    const cal = calMap[l.pureza] || '<span class="status-badge warn">Pendiente</span>';
+    return `<tr>
+      <td>${l.lote}</td><td>${l.procedencia}</td><td>${l.variedad}</td>
+      <td class="num">${fmt(l.kg)}</td><td class="num">${fmt(l.kg_hr)}</td><td>${l.fin || '—'}</td>
+      <td>${cal}</td>
+      <td>${l.paro ? `<span class="status-badge warn">${l.detalle_paro || l.paro}</span>` : `<span class="status-badge ok">Sin novedad</span>`}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('tablaCurado').innerHTML = DATA.plan_curado.map(p => `<tr>
+      <td>${p.variedad}</td><td>${p.tratamiento}</td>
+      <td class="num">${fmt(p.pendiente_total)}</td><td class="num">${fmt(p.curado_disp)}</td><td class="num">${fmt(p.neto_a_curar)}</td>
+    </tr>`).join('');
+
+  document.getElementById('kpiCurado').innerHTML = [
+    kpiCard('Lotes curados', DATA.kpi_curado.lotes, {icon:'layers'}),
+    kpiCard('Kg producidos', DATA.kpi_curado.kg_producidos, {unit:' kg', icon:'package'}),
+    kpiCard('Rendimiento prom.', DATA.kpi_curado.rendimiento_prom, {unit:' kg/hs', icon:'trending-up'}),
+  ].join('');
+  document.getElementById('tablaCuradoDetalle').innerHTML = DATA.lotes_curado.map(l => `<tr>
+      <td>${l.lote_intermedio || '—'}</td><td>${l.lote_final || '—'}</td><td>${l.variedad || '—'}</td>
+      <td>${l.tratamiento || '—'}</td><td class="num">${fmt(l.kg_producidos || 0)}</td>
+      <td class="num">${fmt(l.kg_hs || 0)}</td><td class="num">${fmt(l.horas_prod || 0)}</td><td>${l.area_final || '—'}</td>
+    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);">Todavía no arrancó la etapa de curado esta campaña</td></tr>';
+
+  // ================= PEDIDOS (FUNNEL) =================
+  const funnelHtml = ESTADO_ORDER.map(est => {
+    const d = DATA.estados_pedidos[est] || {count:0, kg:0};
+    return `<div class="funnel-step ${ESTADO_CLASS[est]}">
+      <div class="fs-label">${ESTADO_LABELS[est]}</div>
+      <div class="fs-count">${d.count}</div>
+      <div class="fs-kg">${fmt(d.kg)} kg</div>
+    </div>`;
+  }).join('');
+  document.getElementById('funnelEstados').innerHTML = funnelHtml;
+
+  document.getElementById('captionPedidosTabla').textContent = DATA.prodfinal.length + ' líneas en producción/fulfillment';
+  document.getElementById('tablaPedidos').innerHTML = DATA.prodfinal.map(p => {
+    const badge = ESTADO_LABELS[p.estado] ? `<span class="status-badge ${p.estado==='2- Terminado'?'info':'warn'}">${ESTADO_LABELS[p.estado]}</span>` : (p.estado || '—');
+    return `<tr>
+      <td>${p.venta || p.vta_id}</td><td>${p.cliente}</td><td>${p.variedad}</td><td>${p.presentacion}</td>
+      <td class="num">${fmt(p.kg)}</td><td>${p.lote_final || '—'}</td><td>${p.fecha_entrega || '—'}</td><td>${badge}</td>
+    </tr>`;
+  }).join('');
+
+  // ================= LOGISTICA =================
+  const despachados = DATA.despachos.filter(d => d.estado === 'Despachado');
+  const kgDespachado = despachados.reduce((s,d)=>s+d.kg,0);
+  document.getElementById('kpiLogistica').innerHTML = [
+    kpiCard('Despachos registrados', despachados.length, {icon:'truck'}),
+    kpiCard('Kg despachados', kgDespachado, {unit:' kg', icon:'package'}),
+  ].join('');
+  const estadoBadge = (estado) => {
+    if (estado === 'Despachado') return `<span class="status-badge ok">${estado}</span>`;
+    if (estado === 'Cargado' || estado === 'En Planta') return `<span class="status-badge info">${estado}</span>`;
+    return '<span class="status-badge warn">Sin estado</span>';
+  };
+  document.getElementById('tablaDespacho').innerHTML = DATA.despachos.map(d => `<tr>
+      <td>${d.pedido}</td><td>${d.cliente}</td><td>${d.dia_carga || '—'}</td><td>${d.variedad}</td>
+      <td>${d.presentacion}</td><td class="num">${fmt(d.kg)}</td><td>${d.lote_final || '—'}</td>
+      <td>${estadoBadge(d.estado)}</td>
+    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);">Sin despachos registrados todavía</td></tr>';
+
+  // ================= STOCK =================
+  const totalBolsas = DATA.bolsas_by_semilla.Trigo + DATA.bolsas_by_semilla.Soja;
+  const totalBB = DATA.resumen_marca.reduce((s,m)=>s+m.pintados+m.sin_pintar+m.nuevos,0);
+  document.getElementById('kpiStock').innerHTML = [
+    kpiCard('Bolsas totales', totalBolsas, {note: fmt(DATA.bolsas_by_semilla.Trigo) + ' trigo · ' + fmt(DATA.bolsas_by_semilla.Soja) + ' soja', icon:'package'}),
+    kpiCard('Big bags totales', totalBB, {icon:'layers'}),
+  ].join('');
+  const marcas = DATA.resumen_marca.map(m=>m.marca);
+  drawBarChart('chartBigBags', 'ttBigBags', marcas, [
+    {name:'Pintados', values: DATA.resumen_marca.map(m=>m.pintados)},
+    {name:'Sin pintar', values: DATA.resumen_marca.map(m=>m.sin_pintar)},
+    {name:'Nuevos', values: DATA.resumen_marca.map(m=>m.nuevos)},
+  ], {stacked:true, rotateLabels:true});
+  drawBarChart('chartBolsas', 'ttBolsas', ['Trigo','Soja'], [{name:'Bolsas', values:[DATA.bolsas_by_semilla.Trigo, DATA.bolsas_by_semilla.Soja]}]);
+  document.getElementById('tablaStock').innerHTML = DATA.resumen_marca.map(m => {
+    const total = m.pintados + m.sin_pintar + m.nuevos;
+    const share = totalBB > 0 ? (total / totalBB) * 100 : 0;
+    return `<tr>
+      <td>${m.marca}</td><td class="num">${fmt(m.pintados)}</td><td class="num">${fmt(m.sin_pintar)}</td>
+      <td class="num">${fmt(m.nuevos)}</td><td class="num">${fmt(total)}</td>
+      <td class="num"><div class="mini-bar"><div class="track"><div class="fill" style="width:${share.toFixed(1)}%"></div></div><span class="pct">${fmt1(share)}%</span></div></td>
+    </tr>`;
+  }).join('');
+
+  animateCountUp();
+}
+
+async function cargarPanel() {
+  const overlay = document.getElementById('loadingOverlay');
+  try {
+    const res = await fetch('/api/data', { credentials: 'same-origin' });
+    if (res.status === 401) { window.location.href = '/login.html'; return; }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    DATA = json.data;
+    const ub = document.getElementById('userNombre');
+    if (ub && json.usuario) ub.textContent = json.usuario.nombre_completo || json.usuario.usuario;
+    const upd = document.getElementById('lastUpdate');
+    if (upd && json.actualizado) upd.textContent = 'Actualizado ' + new Date(json.actualizado).toLocaleString('es-AR');
+    if (overlay) overlay.remove();
+    renderAll();
+  } catch (err) {
+    console.error(err);
+    if (overlay) overlay.innerHTML = '<div class="loading-box"><p>No se pudieron cargar los datos.</p><p style="opacity:.7;font-size:13px;">Recargá la página. Si el problema sigue, avisale a Dario.</p></div>';
+  }
+}
+
+document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+  await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' });
+  window.location.href = '/login.html';
+});
+
+cargarPanel();
+
+</script>
+</body>
+</html>
