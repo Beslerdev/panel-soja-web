@@ -34,6 +34,7 @@ const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 const EMAIL_DOMAIN = '@panel-soja.local';
 
 const app = express();
+app.set('trust proxy', 1); // Render (y otros PaaS) hacen proxy por HTTP interno; sin esto, la cookie "secure" nunca se guarda.
 app.use(express.json());
 app.use(
   session({
