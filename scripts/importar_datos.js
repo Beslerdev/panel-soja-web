@@ -367,7 +367,11 @@ function buildSql(xlsxPath) {
 
   function addTable(table, columns, rows) {
     counts[table] = rows.length;
-    blocks.push(`DELETE FROM ${table};`);
+    // "WHERE true" es necesario: Supabase tiene activada la protección
+    // "safeupdate", que bloquea cualquier DELETE/UPDATE sin WHERE (para
+    // evitar borrados accidentales de toda la tabla). Con WHERE true se
+    // sigue borrando todo, pero ya no dispara esa protección.
+    blocks.push(`DELETE FROM ${table} WHERE true;`);
     const stmt = insertStmt(table, columns, rows);
     if (stmt) blocks.push(stmt);
   }
