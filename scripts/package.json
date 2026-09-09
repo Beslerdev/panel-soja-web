@@ -1,0 +1,9 @@
+{
+  "name": "panel-soja-web-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Importador de Excel a Supabase para el Panel de Campaña de Soja.",
+  "dependencies": {
+    "xlsx": "^0.18.5"
+  }
+}
