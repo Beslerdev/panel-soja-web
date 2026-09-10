@@ -28,7 +28,13 @@ def extract_data(wb):
 
     # ---------------- Ventas Finn ----------------
     ws = wb['Ventas Finn']
-    rows = sheet_rows(ws, 3)
+    # El filtro por id_col (columna 1) no alcanza: puede haber filas de
+    # plantilla o con fórmulas que dejan un valor en la columna 1 sin que la
+    # fila tenga datos reales de venta (vta_id vacío). La tabla pedidos_venta
+    # exige vta_id NOT NULL en Supabase, así que acá se descartan
+    # explícitamente las filas sin vta_id, en vez de confiar en la columna 1
+    # como proxy.
+    rows = sheet_rows(ws, 3, filter_fn=lambda row: row.get('vta_id') is not None)
     ventas = []
     for row in rows:
         ventas.append({
