@@ -103,7 +103,12 @@ function sheetRows(ws, headerRow, idCol, filterFn) {
 
 function extractVentas(wb) {
   const ws = wb.Sheets['Ventas Finn'];
-  const rows = sheetRows(ws, 3);
+  // El filtro por idCol (columna 1) no alcanza: puede haber filas de plantilla
+  // o con fórmulas que dejan un valor en la columna 1 sin que la fila tenga
+  // datos reales de venta (vta_id vacío). La tabla pedidos_venta exige
+  // vta_id NOT NULL en Supabase, así que acá se descartan explícitamente las
+  // filas sin vta_id, en vez de confiar en la columna 1 como proxy.
+  const rows = sheetRows(ws, 3, 1, (row) => row['vta_id'] !== null && row['vta_id'] !== undefined);
   return rows.map((row) => ({
     vta_id: row['vta_id'],
     fecha: dstr(row['Fecha']),
