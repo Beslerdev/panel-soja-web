@@ -235,6 +235,17 @@
   .mini-bar .fill { height: 100%; border-radius: 4px; background: var(--accent); }
   .mini-bar .pct { font-size: 11.5px; font-weight: 700; color: var(--text-secondary); font-variant-numeric: tabular-nums; width: 34px; text-align: right; }
 
+  .hbar-list { display: flex; flex-direction: column; gap: 12px; }
+  .hbar-row { display: grid; grid-template-columns: 150px 1fr 64px; align-items: center; gap: 12px; }
+  .hbar-label { font-size: 12.5px; font-weight: 600; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hbar-track { height: 20px; border-radius: 5px; background: var(--gridline); overflow: hidden; }
+  .hbar-fill { height: 100%; border-radius: 5px; background: var(--header-bg); transition: width .7s ease; }
+  .hbar-value { font-size: 13px; font-weight: 700; color: var(--text-primary); text-align: right; font-variant-numeric: tabular-nums; }
+  @media (max-width: 720px) {
+    .hbar-row { grid-template-columns: 92px 1fr 54px; gap: 8px; }
+    .hbar-label { font-size: 11.5px; }
+  }
+
   .status-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; padding: 3px 10px; border-radius: 20px; font-weight: 700; }
   .status-badge.warn { color: var(--warning); background: color-mix(in srgb, var(--warning) 15%, var(--surface-1)); }
   .status-badge.ok { color: var(--good-text); background: color-mix(in srgb, var(--good) 15%, var(--surface-1)); }
@@ -546,15 +557,7 @@
   <!-- ===================== OFERTA ===================== -->
   <section class="view" id="view-oferta">
     <div class="area-head"><div class="eyebrow">ÁREA 07</div><h1>Oferta</h1><p>Oferta, venta y disponible por variedad — en bolsas</p></div>
-    <div class="kpi-row cols-4" id="kpiOferta"></div>
-
-    <div class="panel">
-      <div class="panel-head"><div><h2>Venta por variedad</h2><div class="caption">Bolsas vendidas</div></div></div>
-      <div style="position:relative;">
-        <svg id="chartOferta" viewBox="0 0 1160 280" style="width:100%; height:auto; display:block;"></svg>
-        <div class="tooltip" id="ttOferta"></div>
-      </div>
-    </div>
+    <div class="kpi-row" id="kpiOferta"></div>
 
     <div class="panel">
       <div class="panel-head"><div><h2>Detalle por variedad</h2><div class="caption" id="captionOfertaTabla"></div></div></div>
@@ -564,6 +567,11 @@
           <tbody id="tablaOferta"></tbody>
         </table>
       </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h2>Ventas por variedad</h2><div class="caption">Bolsas vendidas</div></div></div>
+      <div class="hbar-list" id="chartOferta"></div>
     </div>
   </section>
 
@@ -996,15 +1004,24 @@ function renderAll() {
   }).join('');
 
   // ================= OFERTA =================
+  const pctDisponibleOferta = DATA.kpi_oferta.total_oferta
+    ? (DATA.kpi_oferta.total_disponible / DATA.kpi_oferta.total_oferta) * 100 : 0;
   document.getElementById('kpiOferta').innerHTML = [
-    kpiCard('Oferta total', DATA.kpi_oferta.total_oferta, {unit:' Bls', icon:'package'}),
+    kpiCard('Oferta total', DATA.kpi_oferta.total_oferta, {unit:' Bls', note: 'repartidas en ' + DATA.kpi_oferta.variedades + ' variedades', icon:'package'}),
     kpiCard('Venta total', DATA.kpi_oferta.total_venta, {unit:' Bls', note: fmt1(DATA.kpi_oferta.pct_vendido) + '% de la oferta vendida', icon:'trending-up'}),
-    kpiCard('Disponible', DATA.kpi_oferta.total_disponible, {unit:' Bls', icon:'layers'}),
-    kpiCard('Variedades', DATA.kpi_oferta.variedades, {icon:'gauge'}),
+    kpiCard('Disponible', DATA.kpi_oferta.total_disponible, {unit:' Bls', note: fmt1(pctDisponibleOferta) + '% de la oferta aún disponible', icon:'layers'}),
   ].join('');
 
   const ofertaOrdenada = DATA.oferta.slice().sort((a,b) => b.venta - a.venta);
-  drawBarChart('chartOferta', 'ttOferta', ofertaOrdenada.map(o=>o.variedad), [{name:'Bls', values: ofertaOrdenada.map(o=>o.venta)}], {unit:' Bls', rotateLabels:true});
+  const maxVentaOferta = Math.max(1, ...ofertaOrdenada.map(o => o.venta));
+  document.getElementById('chartOferta').innerHTML = ofertaOrdenada.map(o => {
+    const width = Math.max(0, (o.venta / maxVentaOferta) * 100);
+    return `<div class="hbar-row">
+      <div class="hbar-label" title="${o.variedad}">${o.variedad}</div>
+      <div class="hbar-track"><div class="hbar-fill" style="width:${width.toFixed(1)}%"></div></div>
+      <div class="hbar-value">${fmt(o.venta)}</div>
+    </div>`;
+  }).join('') || '<div class="hbar-row"><div class="hbar-label" style="color:var(--text-muted);">Sin datos todavía</div></div>';
 
   document.getElementById('captionOfertaTabla').textContent = DATA.oferta.length + ' variedades';
   document.getElementById('tablaOferta').innerHTML = DATA.oferta.map(o => {
