@@ -332,19 +332,19 @@
     </header>
 
     <nav class="tabs" id="tabs">
-      <button data-view="comercial" class="active">Comercial</button>
+      <button data-view="oferta" class="active">Oferta</button>
+      <button data-view="comercial">Comercial</button>
       <button data-view="balanza">Balanza</button>
       <button data-view="produccion">Producción</button>
       <button data-view="pedidos">Estado de pedidos</button>
       <button data-view="logistica">Despachos</button>
       <button data-view="stock">Stock de empaque</button>
-      <button data-view="oferta">Oferta</button>
     </nav>
   </div>
 
   <!-- ===================== COMERCIAL ===================== -->
-  <section class="view active" id="view-comercial">
-    <div class="area-head"><div class="eyebrow">ÁREA 01</div><h1>Comercial</h1><p>Ventas de la campaña — pedidos, clientes y evolución</p></div>
+  <section class="view" id="view-comercial">
+    <div class="area-head"><div class="eyebrow">ÁREA 02</div><h1>Comercial</h1><p>Ventas de la campaña — pedidos, clientes y evolución</p></div>
     <div class="kpi-row" id="kpiVentas"></div>
     <div class="callout ok" id="calloutChequeo"></div>
 
@@ -386,7 +386,7 @@
 
   <!-- ===================== BALANZA ===================== -->
   <section class="view" id="view-balanza">
-    <div class="area-head"><div class="eyebrow">ÁREA 02</div><h1>Balanza</h1><p>Ingreso de grano — camiones, campos de origen y merma</p></div>
+    <div class="area-head"><div class="eyebrow">ÁREA 03</div><h1>Balanza</h1><p>Ingreso de grano — camiones, campos de origen y merma</p></div>
     <div class="kpi-row cols-4" id="kpiBalanza"></div>
 
     <div class="chart-row">
@@ -427,7 +427,7 @@
 
   <!-- ===================== PRODUCCION ===================== -->
   <section class="view" id="view-produccion">
-    <div class="area-head"><div class="eyebrow">ÁREA 03</div><h1>Producción</h1><p>Planta de procesamiento — rendimiento, calidad y plan de curado</p></div>
+    <div class="area-head"><div class="eyebrow">ÁREA 04</div><h1>Producción</h1><p>Planta de procesamiento — rendimiento, calidad y plan de curado</p></div>
     <div class="kpi-row cols-6" id="kpiProduccion"></div>
 
     <div class="chart-row">
@@ -482,7 +482,7 @@
 
   <!-- ===================== PEDIDOS (ESTADO / FUNNEL) ===================== -->
   <section class="view" id="view-pedidos">
-    <div class="area-head"><div class="eyebrow">ÁREA 04</div><h1>Estado de pedidos</h1><p>Ventas → Producción → Despachos — mismo pedido, distinta etapa</p></div>
+    <div class="area-head"><div class="eyebrow">ÁREA 05</div><h1>Estado de pedidos</h1><p>Ventas → Producción → Despachos — mismo pedido, distinta etapa</p></div>
     <div class="panel" style="margin-bottom:18px;">
       <div class="panel-head"><div><h2>Recorrido de un pedido</h2><div class="caption">Cantidad de líneas y kg en cada etapa</div></div></div>
       <div class="funnel" id="funnelEstados"></div>
@@ -501,7 +501,7 @@
 
   <!-- ===================== LOGISTICA / DESPACHOS ===================== -->
   <section class="view" id="view-logistica">
-    <div class="area-head"><div class="eyebrow">ÁREA 05</div><h1>Despachos</h1><p>Camiones que salen de planta con producto terminado</p></div>
+    <div class="area-head"><div class="eyebrow">ÁREA 06</div><h1>Despachos</h1><p>Camiones que salen de planta con producto terminado</p></div>
     <div class="kpi-row cols-2" id="kpiLogistica"></div>
 
     <div class="panel">
@@ -517,7 +517,7 @@
 
   <!-- ===================== STOCK ===================== -->
   <section class="view" id="view-stock">
-    <div class="area-head"><div class="eyebrow">ÁREA 06</div><h1>Stock de empaque</h1><p>Big bags y bolsas disponibles para envasado</p></div>
+    <div class="area-head"><div class="eyebrow">ÁREA 07</div><h1>Stock de empaque</h1><p>Big bags y bolsas disponibles para envasado</p></div>
     <div class="kpi-row cols-2" id="kpiStock"></div>
 
     <div class="chart-row">
@@ -556,8 +556,8 @@
   </section>
 
   <!-- ===================== OFERTA ===================== -->
-  <section class="view" id="view-oferta">
-    <div class="area-head"><div class="eyebrow">ÁREA 07</div><h1>Oferta</h1><p>Oferta, venta y disponible por variedad — en bolsas</p></div>
+  <section class="view active" id="view-oferta">
+    <div class="area-head"><div class="eyebrow">ÁREA 01</div><h1>Oferta</h1><p>Oferta, venta y disponible por variedad — en bolsas</p></div>
     <div class="kpi-row" id="kpiOferta"></div>
 
     <div class="panel">
