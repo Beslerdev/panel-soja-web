@@ -326,6 +326,7 @@
       <button data-view="pedidos">Estado de pedidos</button>
       <button data-view="logistica">Despachos</button>
       <button data-view="stock">Stock de empaque</button>
+      <button data-view="oferta">Oferta</button>
     </nav>
   </div>
 
@@ -537,6 +538,30 @@
         <table class="data-table">
           <thead><tr><th>Marca</th><th>Pintados</th><th>Sin pintar</th><th>Nuevos</th><th>Total</th><th>% del total</th></tr></thead>
           <tbody id="tablaStock"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== OFERTA ===================== -->
+  <section class="view" id="view-oferta">
+    <div class="area-head"><div class="eyebrow">ÁREA 07</div><h1>Oferta</h1><p>Oferta, venta y disponible por variedad — en bolsas</p></div>
+    <div class="kpi-row cols-4" id="kpiOferta"></div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h2>Venta por variedad</h2><div class="caption">Bolsas vendidas</div></div></div>
+      <div style="position:relative;">
+        <svg id="chartOferta" viewBox="0 0 1160 280" style="width:100%; height:auto; display:block;"></svg>
+        <div class="tooltip" id="ttOferta"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h2>Detalle por variedad</h2><div class="caption" id="captionOfertaTabla"></div></div></div>
+      <div class="table-scroll max-h">
+        <table class="data-table wide-left">
+          <thead><tr><th>Semillero</th><th>Variedad</th><th>Oferta</th><th>Venta</th><th>Disponible</th><th>% vendido</th></tr></thead>
+          <tbody id="tablaOferta"></tbody>
         </table>
       </div>
     </div>
@@ -969,6 +994,27 @@ function renderAll() {
       <td class="num"><div class="mini-bar"><div class="track"><div class="fill" style="width:${share.toFixed(1)}%"></div></div><span class="pct">${fmt1(share)}%</span></div></td>
     </tr>`;
   }).join('');
+
+  // ================= OFERTA =================
+  document.getElementById('kpiOferta').innerHTML = [
+    kpiCard('Oferta total', DATA.kpi_oferta.total_oferta, {unit:' Bls', icon:'package'}),
+    kpiCard('Venta total', DATA.kpi_oferta.total_venta, {unit:' Bls', note: fmt1(DATA.kpi_oferta.pct_vendido) + '% de la oferta vendida', icon:'trending-up'}),
+    kpiCard('Disponible', DATA.kpi_oferta.total_disponible, {unit:' Bls', icon:'layers'}),
+    kpiCard('Variedades', DATA.kpi_oferta.variedades, {icon:'gauge'}),
+  ].join('');
+
+  const ofertaOrdenada = DATA.oferta.slice().sort((a,b) => b.venta - a.venta);
+  drawBarChart('chartOferta', 'ttOferta', ofertaOrdenada.map(o=>o.variedad), [{name:'Bls', values: ofertaOrdenada.map(o=>o.venta)}], {unit:' Bls', rotateLabels:true});
+
+  document.getElementById('captionOfertaTabla').textContent = DATA.oferta.length + ' variedades';
+  document.getElementById('tablaOferta').innerHTML = DATA.oferta.map(o => {
+    const share = o.oferta > 0 ? Math.min(100, (o.venta / o.oferta) * 100) : 0;
+    return `<tr>
+      <td>${o.semillero || '—'}</td><td>${o.variedad}</td>
+      <td class="num">${fmt(o.oferta)}</td><td class="num">${fmt(o.venta)}</td><td class="num">${fmt(o.disponible)}</td>
+      <td class="num"><div class="mini-bar"><div class="track"><div class="fill" style="width:${share.toFixed(1)}%"></div></div><span class="pct">${fmt1(share)}%</span></div></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">Sin datos de oferta cargados todavía</td></tr>';
 
   animateCountUp();
 }
