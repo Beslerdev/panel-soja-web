@@ -251,6 +251,7 @@
   .status-badge.ok { color: var(--good-text); background: color-mix(in srgb, var(--good) 15%, var(--surface-1)); }
   .status-badge.crit { color: var(--critical); background: color-mix(in srgb, var(--critical) 15%, var(--surface-1)); }
   .status-badge.info { color: var(--series-4); background: color-mix(in srgb, var(--series-4) 15%, var(--surface-1)); }
+  .status-badge.done { color: var(--series-1); background: color-mix(in srgb, var(--series-1) 15%, var(--surface-1)); }
   .status-badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
 
   .callout {
@@ -848,6 +849,9 @@ function animateCountUp() {
 const ESTADO_ORDER = ['4- Procesar', '3- En Proceso', '2- Terminado', '1- Despachado'];
 const ESTADO_LABELS = { '4- Procesar':'Por procesar', '3- En Proceso':'En proceso', '2- Terminado':'Terminado', '1- Despachado':'Despachado' };
 const ESTADO_CLASS = { '4- Procesar':'s1', '3- En Proceso':'s2', '2- Terminado':'s3', '1- Despachado':'s4' };
+// Mismos colores que el funnel de arriba (s1=warn, s2=info, s3=done, s4=ok) para que la
+// referencia de "Recorrido de un pedido" coincida con el color de cada fila de la tabla.
+const ESTADO_BADGE = { '4- Procesar':'warn', '3- En Proceso':'info', '2- Terminado':'done', '1- Despachado':'ok' };
 
 function renderAll() {
   // ================= COMERCIAL =================
@@ -954,7 +958,7 @@ function renderAll() {
 
   document.getElementById('captionPedidosTabla').textContent = DATA.prodfinal.length + ' líneas en producción/fulfillment';
   document.getElementById('tablaPedidos').innerHTML = DATA.prodfinal.map(p => {
-    const badge = ESTADO_LABELS[p.estado] ? `<span class="status-badge ${p.estado==='2- Terminado'?'info':'warn'}">${ESTADO_LABELS[p.estado]}</span>` : (p.estado || '—');
+    const badge = ESTADO_LABELS[p.estado] ? `<span class="status-badge ${ESTADO_BADGE[p.estado]}">${ESTADO_LABELS[p.estado]}</span>` : (p.estado || '—');
     return `<tr>
       <td>${p.venta || p.vta_id}</td><td>${p.cliente}</td><td>${p.variedad}</td><td>${p.presentacion}</td>
       <td class="num">${fmt(p.kg)}</td><td>${p.lote_final || '—'}</td><td>${p.fecha_entrega || '—'}</td><td>${badge}</td>
