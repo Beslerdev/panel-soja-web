@@ -101,6 +101,7 @@ async function buildPanelData() {
     'plan_curado_semanal',
     'lotes_curado',
     'calendario_produccion',
+    'oferta_variedades',
   ];
 
   const results = {};
