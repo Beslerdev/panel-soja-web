@@ -222,6 +222,24 @@
   .table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
   .table-scroll.max-h { max-height: 480px; overflow-y: auto; }
   .table-scroll.max-h thead th { position: sticky; top: 0; z-index: 1; }
+
+  /* ---- Filtros por columna ---- */
+  table.data-table thead tr.filter-row th { padding: 6px 8px; background: var(--header-bg); border-bottom: 1px solid var(--gridline); }
+  .f-input {
+    width: 100%; min-width: 58px; box-sizing: border-box;
+    font-family: var(--font-body); font-size: 11.5px; font-weight: 400;
+    letter-spacing: 0; text-transform: none; text-align: left;
+    padding: 4px 7px; color: var(--header-text);
+    background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.22); border-radius: 6px;
+  }
+  .f-input::placeholder { color: var(--header-text); opacity: .45; }
+  .f-input:focus { outline: none; border-color: var(--header-text); background: rgba(255,255,255,.18); }
+  .f-input.activo { background: rgba(255,255,255,.24); border-color: var(--header-text); }
+  .table-scroll.max-h thead tr.filter-row th { top: var(--head-h, 34px); }
+  .filter-count { display: none; margin-top: 8px; font-size: 12px; color: var(--text-secondary); align-items: center; gap: 12px; }
+  .filter-count.visible { display: flex; }
+  .filter-count button { font: inherit; color: var(--accent-text); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
+  .filter-count .vacio { color: var(--warning); }
   .table-scroll table { border: none; }
   .table-scroll td:first-child, .table-scroll th:first-child { padding-left: 14px; }
   .table-scroll td:last-child, .table-scroll th:last-child { padding-right: 14px; }
@@ -1038,6 +1056,114 @@ function renderAll() {
   }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">Sin datos de oferta cargados todavía</td></tr>';
 
   animateCountUp();
+  sincronizarFiltros();
+}
+
+
+/* ================= Filtros por columna en las tablas =================
+   Capa independiente: agrega una fila de casillas debajo de los titulos
+   de cada <table class="data-table"> y esconde las filas que no coinciden.
+   No modifica DATA ni el codigo que dibuja las tablas: solo muestra u
+   oculta <tr> que ya estan renderizados. */
+
+function esFilaSinDatos(tr) {
+  return tr.children.length === 1 && tr.children[0].hasAttribute('colspan');
+}
+
+function aplicarFiltro(table) {
+  const inputs = Array.from(table.querySelectorAll('tr.filter-row .f-input'));
+  const criterios = inputs.map(i => i.value.trim().toLowerCase());
+  inputs.forEach((i, n) => i.classList.toggle('activo', criterios[n] !== ''));
+
+  let total = 0, visibles = 0;
+  table.querySelectorAll('tbody tr').forEach(tr => {
+    if (esFilaSinDatos(tr)) return;
+    total++;
+    let pasa = true;
+    for (let n = 0; n < criterios.length && pasa; n++) {
+      if (!criterios[n]) continue;
+      const celda = tr.children[n];
+      const txt = celda ? celda.textContent.toLowerCase() : '';
+      // Que escribir "4026" tambien encuentre "4.026".
+      if (!txt.includes(criterios[n]) && !txt.replace(/\./g, '').includes(criterios[n])) pasa = false;
+    }
+    tr.style.display = pasa ? '' : 'none';
+    if (pasa) visibles++;
+  });
+
+  const activos = criterios.filter(c => c !== '').length;
+  if (table._filtroInfo) {
+    if (activos) {
+      table._filtroTexto.textContent = 'Mostrando ' + visibles + ' de ' + total;
+      table._filtroTexto.classList.toggle('vacio', visibles === 0);
+      table._filtroInfo.classList.add('visible');
+    } else {
+      table._filtroInfo.classList.remove('visible');
+    }
+  }
+  return { total: total, visibles: visibles };
+}
+
+function prepararFiltros(table) {
+  if (table._filtrosListos) return;
+  const thead = table.querySelector('thead');
+  const tbody = table.querySelector('tbody');
+  if (!thead || !tbody) return;
+  const titulos = thead.querySelector('tr');
+  if (!titulos || !titulos.children.length) return;
+
+  const fila = document.createElement('tr');
+  fila.className = 'filter-row';
+  Array.from(titulos.children).forEach(th => {
+    const nombre = th.textContent.trim();
+    const celda = document.createElement('th');
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'f-input';
+    inp.placeholder = nombre;
+    inp.autocomplete = 'off';
+    inp.setAttribute('aria-label', 'Filtrar por ' + nombre);
+    inp.addEventListener('input', () => aplicarFiltro(table));
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { inp.value = ''; aplicarFiltro(table); }
+    });
+    celda.appendChild(inp);
+    fila.appendChild(celda);
+  });
+  thead.appendChild(fila);
+
+  const info = document.createElement('div');
+  info.className = 'filter-count';
+  const texto = document.createElement('span');
+  const limpiar = document.createElement('button');
+  limpiar.type = 'button';
+  limpiar.textContent = 'Limpiar filtros';
+  limpiar.addEventListener('click', () => {
+    fila.querySelectorAll('.f-input').forEach(i => { i.value = ''; });
+    aplicarFiltro(table);
+  });
+  info.appendChild(texto);
+  info.appendChild(limpiar);
+  (table.closest('.table-scroll') || table).insertAdjacentElement('afterend', info);
+
+  table._filtroFila = fila;
+  table._filtroTexto = texto;
+  table._filtroInfo = info;
+  table._filtrosListos = true;
+
+  // Alto de la fila de titulos, para que las casillas queden pegadas
+  // abajo de ella cuando la tabla tiene encabezado fijo.
+  requestAnimationFrame(() => {
+    const h = titulos.getBoundingClientRect().height;
+    if (h) table.style.setProperty('--head-h', h + 'px');
+  });
+}
+
+function sincronizarFiltros() {
+  document.querySelectorAll('table.data-table').forEach(table => {
+    prepararFiltros(table);
+    aplicarFiltro(table);
+  });
 }
 
 async function cargarPanel() {
