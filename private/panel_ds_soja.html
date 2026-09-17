@@ -17,6 +17,7 @@
     --border:         rgba(35,40,28,.12);
     --header-bg:      #232b1a;
     --header-text:    #f3efe2;
+    --table-head-bg:  #303b24;
     --accent:         #2f7d3f;
     --accent-text:    #1e5e2c;
     --series-1:       #c2410c;
@@ -44,6 +45,7 @@
     --baseline:       #3c4130;
     --border:         rgba(243,239,226,.12);
     --header-bg:      #171d10;
+    --table-head-bg:  #242d19;
     --header-text:    #f3efe2;
     --accent:         #4fae63;
     --accent-text:    #7fd191;
@@ -214,7 +216,7 @@
   table.data-table th:first-child, table.data-table td:first-child,
   table.data-table th:nth-child(2), table.data-table td:nth-child(2) { text-align: left; }
   table.wide-left th:nth-child(3), table.wide-left td:nth-child(3) { text-align: left; }
-  table.data-table thead th { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--header-text); font-weight: 700; background: var(--header-bg); }
+  table.data-table thead th { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--header-text); font-weight: 700; background: var(--table-head-bg); }
   table.data-table thead tr:first-child th:first-child { border-top-left-radius: 10px; }
   table.data-table thead tr:first-child th:last-child { border-top-right-radius: 10px; }
   table.data-table tbody tr:hover { background: var(--page-plane); }
@@ -224,7 +226,7 @@
   .table-scroll.max-h thead th { position: sticky; top: 0; z-index: 1; }
 
   /* ---- Filtros por columna ---- */
-  table.data-table thead tr.filter-row th { padding: 6px 8px; background: var(--header-bg); border-bottom: 1px solid var(--gridline); }
+  table.data-table thead tr.filter-row th { padding: 6px 8px; background: var(--table-head-bg); border-bottom: 1px solid var(--gridline); }
   .f-input {
     width: 100%; min-width: 58px; box-sizing: border-box;
     font-family: var(--font-body); font-size: 11.5px; font-weight: 400;
