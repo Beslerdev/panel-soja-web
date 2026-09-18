@@ -242,6 +242,41 @@
   .filter-count.visible { display: flex; }
   .filter-count button { font: inherit; color: var(--accent-text); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
   .filter-count .vacio { color: var(--warning); }
+
+  /* ---- Ojo de calidad (solapa Despachos) ---- */
+  table.data-table th.col-ojo, table.data-table td.col-ojo { text-align: center; width: 52px; padding-left: 4px; padding-right: 4px; }
+  .btn-ojo {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; padding: 0;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: transparent; color: var(--text-secondary); cursor: pointer;
+    transition: color .15s ease, border-color .15s ease, background .15s ease;
+  }
+  .btn-ojo svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .btn-ojo:hover { color: var(--accent-text); border-color: var(--accent); background: var(--page-plane); }
+  .btn-ojo:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn-ojo[disabled] { opacity: .28; cursor: default; }
+
+  .modal-fondo { position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(20,24,16,.55); }
+  .modal-fondo.abierto { display: flex; }
+  .modal-caja { width: 100%; max-width: 480px; max-height: 86vh; overflow-y: auto; background: var(--surface-1); border-radius: 14px; box-shadow: var(--card-shadow-hover); }
+  .modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px 20px 14px; border-bottom: 1px solid var(--gridline); }
+  .modal-head h3 { margin: 0; font-family: var(--font-display); font-size: 17px; color: var(--text-primary); }
+  .modal-head .caption { margin-top: 3px; font-size: 12px; color: var(--text-muted); }
+  .modal-cerrar { flex: none; width: 28px; height: 28px; border: 0; border-radius: 8px; background: transparent; color: var(--text-muted); font-size: 20px; line-height: 1; cursor: pointer; }
+  .modal-cerrar:hover { background: var(--page-plane); color: var(--text-primary); }
+  .modal-cuerpo { padding: 16px 20px 20px; }
+  .calidad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .calidad-dato { padding: 12px 10px; border: 1px solid var(--gridline); border-radius: 10px; text-align: center; }
+  .calidad-dato .et { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); }
+  .calidad-dato .vl { margin-top: 5px; font-family: var(--font-mono); font-size: 19px; font-weight: 700; color: var(--text-primary); }
+  .calidad-dato .vl.vacio { color: var(--text-muted); font-weight: 400; }
+  .calidad-dato .un { font-size: 11px; color: var(--text-muted); margin-left: 2px; font-family: var(--font-body); font-weight: 400; }
+  .calidad-sub { margin: 14px 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); }
+  .calidad-meta { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+  .calidad-meta b { color: var(--text-primary); font-weight: 600; }
+  .calidad-aviso { padding: 14px; border-radius: 10px; background: var(--page-plane); font-size: 12.5px; color: var(--text-secondary); line-height: 1.6; }
+  @media (max-width: 520px) { .calidad-grid { grid-template-columns: 1fr; } }
   .table-scroll table { border: none; }
   .table-scroll td:first-child, .table-scroll th:first-child { padding-left: 14px; }
   .table-scroll td:last-child, .table-scroll th:last-child { padding-right: 14px; }
@@ -528,7 +563,7 @@
       <div class="panel-head"><div><h2>Despachos registrados</h2><div class="caption">Hoja "Despacho" — se va completando a medida que avanza la campaña. Los indicadores solo cuentan pedidos con estado "Despachado"; los pedidos en planta, cargados o sin estado se muestran igual en la tabla pero no suman.</div></div></div>
       <div class="table-scroll">
         <table class="data-table wide-left">
-          <thead><tr><th>Pedido</th><th>Cliente</th><th>Día de carga</th><th>Variedad</th><th>Presentación</th><th>Kg</th><th>Lote final</th><th>Estado</th></tr></thead>
+          <thead><tr><th>Pedido</th><th>Cliente</th><th>Día de carga</th><th>Variedad</th><th>Presentación</th><th>Kg</th><th>Lote final</th><th>Estado</th><th class="col-ojo">Calidad</th></tr></thead>
           <tbody id="tablaDespacho"></tbody>
         </table>
       </div>
@@ -599,6 +634,20 @@
   <footer class="mock-footer">
     Datos en vivo desde Supabase — actualizados a medida que se cargan en planta.
   </footer>
+</div>
+
+<!-- Ventana de calidad del lote (solapa Despachos) -->
+<div class="modal-fondo" id="modalCalidad" role="dialog" aria-modal="true" aria-labelledby="modalCalidadTitulo">
+  <div class="modal-caja">
+    <div class="modal-head">
+      <div>
+        <h3 id="modalCalidadTitulo">Calidad del lote</h3>
+        <div class="caption" id="modalCalidadSub"></div>
+      </div>
+      <button class="modal-cerrar" id="modalCalidadCerrar" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="modal-cuerpo" id="modalCalidadCuerpo"></div>
+  </div>
 </div>
 
 <script>
@@ -1001,7 +1050,8 @@ function renderAll() {
       <td>${d.pedido}</td><td>${d.cliente}</td><td>${d.dia_carga || '—'}</td><td>${d.variedad}</td>
       <td>${d.presentacion}</td><td class="num">${fmt(d.kg)}</td><td>${d.lote_final || '—'}</td>
       <td>${estadoBadge(d.estado)}</td>
-    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);">Sin despachos registrados todavía</td></tr>';
+      <td class="col-ojo">${botonOjo(d.lote_final)}</td>
+    </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--text-muted);">Sin despachos registrados todavía</td></tr>';
 
   // ================= STOCK =================
   const totalBolsas = DATA.bolsas_by_semilla.Trigo + DATA.bolsas_by_semilla.Soja;
@@ -1119,6 +1169,12 @@ function prepararFiltros(table) {
   Array.from(titulos.children).forEach(th => {
     const nombre = th.textContent.trim();
     const celda = document.createElement('th');
+    // Columnas que no se filtran (por ejemplo la del ojo): celda vacia.
+    if (th.classList.contains('col-ojo')) {
+      celda.className = 'col-ojo';
+      fila.appendChild(celda);
+      return;
+    }
     const inp = document.createElement('input');
     inp.type = 'text';
     inp.className = 'f-input';
@@ -1167,6 +1223,116 @@ function sincronizarFiltros() {
     aplicarFiltro(table);
   });
 }
+
+/* ================= Calidad del lote (ojo de la solapa Despachos) =================
+   Cada linea de la tabla de Despacho tiene un ojo al final. Al hacer clic,
+   busca en DATA.lotes (la hoja "Intermedio") las filas cuyo "Lote Final"
+   coincide con el lote de esa linea, y muestra PG, PG curado y P1000.
+
+   Los datos ya vienen en DATA.lotes, asi que no hace falta pedirle nada al
+   servidor: la ventana abre al instante. Si un lote tiene mas de una fila en
+   Intermedio, se muestran todas. */
+
+const ICONO_OJO = '<svg viewBox="0 0 24 24"><path d="M2 12s3.6-6.6 10-6.6 10 6.6 10 6.6-3.6 6.6-10 6.6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.9"/></svg>';
+
+function escAttr(v) {
+  return String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// Un valor de laboratorio vacio puede venir como null, '' o 0 (el 0 es el
+// relleno que deja el Excel cuando todavia no hay resultado).
+function valorVacio(v) {
+  if (v === null || v === undefined) return true;
+  const t = String(v).trim();
+  return t === '' || t === '0';
+}
+
+function lotesDelLote(lote) {
+  if (!lote || typeof DATA === 'undefined' || !DATA || !Array.isArray(DATA.lotes)) return [];
+  const clave = String(lote).trim().toLowerCase();
+  return DATA.lotes.filter(l => l.lote && String(l.lote).trim().toLowerCase() === clave);
+}
+
+function botonOjo(lote) {
+  if (!lote) {
+    return '<button class="btn-ojo" disabled title="Esta línea no tiene lote final">' + ICONO_OJO + '</button>';
+  }
+  const hay = lotesDelLote(lote).length > 0;
+  const t = hay ? 'Ver calidad del lote ' + lote : 'El lote ' + lote + ' no figura en Intermedio';
+  return '<button class="btn-ojo" data-lote="' + escAttr(lote) + '"' + (hay ? '' : ' disabled') +
+         ' title="' + escAttr(t) + '" aria-label="' + escAttr(t) + '">' + ICONO_OJO + '</button>';
+}
+
+function celdaCalidad(etiqueta, valor, unidad) {
+  const vacio = valorVacio(valor);
+  const texto = vacio ? '—' : String(valor).trim();
+  const un = (!vacio && unidad) ? '<span class="un">' + unidad + '</span>' : '';
+  return '<div class="calidad-dato"><div class="et">' + etiqueta + '</div>' +
+         '<div class="vl' + (vacio ? ' vacio' : '') + '">' + texto + un + '</div></div>';
+}
+
+function fechaCorta(f) {
+  if (!f) return null;
+  const m = String(f).slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? m[3] + '/' + m[2] + '/' + m[1] : String(f);
+}
+
+function bloqueCalidad(l) {
+  const meta = [];
+  if (l.variedad) meta.push('Variedad <b>' + l.variedad + '</b>');
+  if (l.procedencia) meta.push('Procedencia <b>' + l.procedencia + '</b>');
+  if (l.area) meta.push('Área <b>' + l.area + '</b>');
+  if (l.fin) meta.push('Fin de proceso <b>' + fechaCorta(l.fin) + '</b>');
+  if (l.pureza) meta.push('Pureza <b>' + l.pureza + '</b>');
+  if (l.ok_calidad) meta.push('Ok calidad <b>' + l.ok_calidad + '</b>');
+  const sinDatos = valorVacio(l.pg) && valorVacio(l.pg_curado) && valorVacio(l.p1000);
+  return '<div class="calidad-grid">' +
+      celdaCalidad('PG', l.pg, '%') +
+      celdaCalidad('PG curado', l.pg_curado, '%') +
+      celdaCalidad('P1000', l.p1000, 'g') +
+    '</div>' +
+    (sinDatos ? '<div class="calidad-aviso" style="margin-top:12px;">Este lote todavía no tiene resultados de laboratorio cargados en la hoja "Intermedio".</div>' : '') +
+    (meta.length ? '<div class="calidad-sub">Datos del lote</div><div class="calidad-meta">' + meta.join(' · ') + '</div>' : '');
+}
+
+function abrirCalidad(lote) {
+  const filas = lotesDelLote(lote);
+  const caja = document.getElementById('modalCalidad');
+  document.getElementById('modalCalidadTitulo').textContent = 'Calidad del lote ' + lote;
+  document.getElementById('modalCalidadSub').textContent =
+    filas.length > 1 ? filas.length + ' procesos en la hoja "Intermedio"' : 'Hoja "Intermedio"';
+
+  const cuerpo = document.getElementById('modalCalidadCuerpo');
+  if (!filas.length) {
+    cuerpo.innerHTML = '<div class="calidad-aviso">No encontré el lote <b>' + lote + '</b> en la hoja "Intermedio".</div>';
+  } else if (filas.length === 1) {
+    cuerpo.innerHTML = bloqueCalidad(filas[0]);
+  } else {
+    cuerpo.innerHTML = filas.map((l, i) =>
+      '<div' + (i ? ' style="margin-top:20px;padding-top:18px;border-top:1px solid var(--gridline);"' : '') + '>' +
+      '<div class="calidad-sub" style="margin-top:0;">Proceso ' + (i + 1) + ' de ' + filas.length + '</div>' +
+      bloqueCalidad(l) + '</div>').join('');
+  }
+  caja.classList.add('abierto');
+  document.getElementById('modalCalidadCerrar').focus();
+}
+
+function cerrarCalidad() {
+  document.getElementById('modalCalidad').classList.remove('abierto');
+}
+
+document.addEventListener('click', (e) => {
+  const boton = e.target.closest('.btn-ojo');
+  if (boton && !boton.disabled && boton.dataset.lote) { abrirCalidad(boton.dataset.lote); return; }
+  if (e.target.closest('#modalCalidadCerrar')) { cerrarCalidad(); return; }
+  if (e.target.id === 'modalCalidad') cerrarCalidad(); // clic fuera de la caja
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') cerrarCalidad();
+});
 
 async function cargarPanel() {
   const overlay = document.getElementById('loadingOverlay');
