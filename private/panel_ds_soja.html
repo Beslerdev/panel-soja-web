@@ -1273,18 +1273,10 @@ function celdaCalidad(etiqueta, valor, unidad) {
          '<div class="vl' + (vacio ? ' vacio' : '') + '">' + texto + un + '</div></div>';
 }
 
-function fechaCorta(f) {
-  if (!f) return null;
-  const m = String(f).slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  return m ? m[3] + '/' + m[2] + '/' + m[1] : String(f);
-}
-
 function bloqueCalidad(l) {
   const meta = [];
   if (l.variedad) meta.push('Variedad <b>' + l.variedad + '</b>');
   if (l.procedencia) meta.push('Procedencia <b>' + l.procedencia + '</b>');
-  if (l.area) meta.push('Área <b>' + l.area + '</b>');
-  if (l.fin) meta.push('Fin de proceso <b>' + fechaCorta(l.fin) + '</b>');
   if (l.pureza) meta.push('Pureza <b>' + l.pureza + '</b>');
   if (l.ok_calidad) meta.push('Ok calidad <b>' + l.ok_calidad + '</b>');
   const sinDatos = valorVacio(l.pg) && valorVacio(l.pg_curado) && valorVacio(l.p1000);
@@ -1302,7 +1294,7 @@ function abrirCalidad(lote) {
   const caja = document.getElementById('modalCalidad');
   document.getElementById('modalCalidadTitulo').textContent = 'Calidad del lote ' + lote;
   document.getElementById('modalCalidadSub').textContent =
-    filas.length > 1 ? filas.length + ' procesos en la hoja "Intermedio"' : 'Hoja "Intermedio"';
+    filas.length > 1 ? filas.length + ' procesos' : '';
 
   const cuerpo = document.getElementById('modalCalidadCuerpo');
   if (!filas.length) {
