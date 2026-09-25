@@ -557,13 +557,13 @@
   <!-- ===================== LOGISTICA / DESPACHOS ===================== -->
   <section class="view" id="view-logistica">
     <div class="area-head"><div class="eyebrow">ÁREA 02</div><h1>Despachos</h1><p>Camiones que salen de planta con producto terminado</p></div>
-    <div class="kpi-row cols-2" id="kpiLogistica"></div>
+    <div class="kpi-row cols-3" id="kpiLogistica"></div>
 
     <div class="panel">
       <div class="panel-head"><div><h2>Despachos registrados</h2><div class="caption">Hoja "Despacho" — se va completando a medida que avanza la campaña. Los indicadores solo cuentan pedidos con estado "Despachado"; los pedidos en planta, cargados o sin estado se muestran igual en la tabla pero no suman.</div></div></div>
       <div class="table-scroll max-h">
         <table class="data-table wide-left">
-          <thead><tr><th>Pedido</th><th>Cliente</th><th>Día de carga</th><th>Variedad</th><th>Presentación</th><th>Kg</th><th>Lote final</th><th>Estado</th><th class="col-ojo">Calidad</th></tr></thead>
+          <thead><tr><th>Pedido</th><th>Cliente</th><th>Día de carga</th><th>Variedad</th><th>Presentación</th><th>Kg</th><th>Bolsas</th><th>Lote final</th><th>Estado</th><th class="col-ojo">Calidad</th></tr></thead>
           <tbody id="tablaDespacho"></tbody>
         </table>
       </div>
@@ -690,6 +690,18 @@ document.getElementById('tabs').addEventListener('click', (e) => {
   document.getElementById('view-' + btn.dataset.view).classList.add('active');
 });
 
+// Los kg se muestran tambien como bolsas. Una bolsa son 40 kg, sea cual sea la
+// presentacion del despacho (un big bag de 800 kg equivale a 20 bolsas).
+const KG_POR_BOLSA = 40;
+
+// Excepcion: los despachos a granel no se expresan en bolsas — es grano suelto,
+// no semilla embolsada. Sus kg se muestran y se cuentan igual que siempre; lo
+// unico que no aplica es el equivalente en bolsas. Hoy el unico destino asi es
+// PUERTO; si aparece otro, se agrega a esta lista.
+const DESTINOS_A_GRANEL = ['PUERTO'];
+function esAGranel(d) {
+  return DESTINOS_A_GRANEL.includes(String(d && d.cliente || '').trim().toUpperCase());
+}
 function fmt(n) { return Math.round(n).toLocaleString('es-AR'); }
 function fmt1(n) { return n.toLocaleString('es-AR', { maximumFractionDigits: 1 }); }
 function pct(n) { return n.toLocaleString('es-AR', { maximumFractionDigits: 1 }) + '%'; }
@@ -1037,9 +1049,15 @@ function renderAll() {
   // ================= LOGISTICA =================
   const despachados = DATA.despachos.filter(d => d.estado === 'Despachado');
   const kgDespachado = despachados.reduce((s,d)=>s+d.kg,0);
+  const aGranel = despachados.filter(esAGranel);
+  const kgEmbolsado = despachados.filter(d => !esAGranel(d)).reduce((s,d)=>s+d.kg,0);
   document.getElementById('kpiLogistica').innerHTML = [
     kpiCard('Despachos registrados', despachados.length, {icon:'truck'}),
     kpiCard('Kg despachados', kgDespachado, {unit:' kg', icon:'package'}),
+    kpiCard('Bolsas despachadas', Math.round(kgEmbolsado / KG_POR_BOLSA), {unit:' bls',
+      note: 'equivalente en bolsas de ' + KG_POR_BOLSA + ' kg' +
+            (aGranel.length ? ' · no incluye ' + aGranel.length + (aGranel.length === 1 ? ' despacho a granel' : ' despachos a granel') : ''),
+      icon:'layers'}),
   ].join('');
   const estadoBadge = (estado) => {
     if (estado === 'Despachado') return `<span class="status-badge ok">${estado}</span>`;
@@ -1048,10 +1066,10 @@ function renderAll() {
   };
   document.getElementById('tablaDespacho').innerHTML = DATA.despachos.map(d => `<tr>
       <td>${d.pedido}</td><td>${d.cliente}</td><td>${d.dia_carga || '—'}</td><td>${d.variedad}</td>
-      <td>${d.presentacion}</td><td class="num">${fmt(d.kg)}</td><td>${d.lote_final || '—'}</td>
+      <td>${d.presentacion}</td><td class="num">${fmt(d.kg)}</td><td class="num">${(d.kg && !esAGranel(d)) ? fmt1(d.kg / KG_POR_BOLSA) : '—'}</td><td>${d.lote_final || '—'}</td>
       <td>${estadoBadge(d.estado)}</td>
       <td class="col-ojo">${botonOjo(d.lote_final)}</td>
-    </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--text-muted);">Sin despachos registrados todavía</td></tr>';
+    </tr>`).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--text-muted);">Sin despachos registrados todavía</td></tr>';
 
   // ================= STOCK =================
   const totalBolsas = DATA.bolsas_by_semilla.Trigo + DATA.bolsas_by_semilla.Soja;
