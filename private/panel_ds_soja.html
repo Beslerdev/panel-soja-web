@@ -670,6 +670,7 @@ const ICONS = {
   'alert-triangle': '<path d="M12 3l10 18H2L12 3Z"/><path d="M12 9v5"/><path d="M12 17v.01"/>',
   'check-circle': '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/>',
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+  bag: '<path d="M4.4 5.6 q2.53 -3 5.07 0 q2.53 -3 5.07 0 q2.53 -3 5.06 0"/><path d="M4.4 5.6 H19.6"/><path d="M5.2 6.6 C4.3 11 3.9 15 3.9 17.6 C3.9 19.6 5 20.6 6.8 20.6 H17.2 C19 20.6 20.1 19.6 20.1 17.6 C20.1 15 19.7 11 18.8 6.6"/><path d="M5.2 6.6 H18.8"/><path d="M9 18.2 H15"/>',
 };
 
 const themeBtn = document.getElementById('themeToggle');
@@ -1057,7 +1058,7 @@ function renderAll() {
     kpiCard('Bolsas despachadas', Math.round(kgEmbolsado / KG_POR_BOLSA), {unit:' bls',
       note: 'equivalente en bolsas de ' + KG_POR_BOLSA + ' kg' +
             (aGranel.length ? ' · no incluye ' + aGranel.length + (aGranel.length === 1 ? ' despacho a granel' : ' despachos a granel') : ''),
-      icon:'layers'}),
+      icon:'bag'}),
   ].join('');
   const estadoBadge = (estado) => {
     if (estado === 'Despachado') return `<span class="status-badge ok">${estado}</span>`;
