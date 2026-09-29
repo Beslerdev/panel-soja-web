@@ -256,15 +256,15 @@
   .btn-flag .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--warning); flex-shrink: 0; }
   .btn-flag.activo { background: color-mix(in srgb, var(--warning) 14%, var(--surface-1)); border-color: var(--warning); color: var(--warning); }
 
-  .panel-head-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .panel-head-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-left: auto; }
   .totales-chip {
-    display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600;
-    color: var(--text-secondary); background: var(--page-plane); border: 1px solid var(--gridline);
-    border-radius: 20px; padding: 7px 14px; white-space: nowrap; font-family: var(--font-mono);
+    display: inline-flex; align-items: baseline; gap: 6px;
+    font-family: var(--font-mono); font-size: 15px; font-weight: 700;
+    color: var(--accent-text); letter-spacing: -0.005em; white-space: nowrap;
   }
   .totales-chip:empty { display: none; }
-  .totales-chip b { font-weight: 700; color: var(--text-primary); }
-  .totales-chip .sep { color: var(--text-muted); font-weight: 400; }
+  .totales-chip b { font-weight: 700; color: var(--accent-text); }
+  .totales-chip .sep { color: var(--text-muted); font-weight: 400; font-size: 13px; }
 
   /* ---- Ojo de calidad (solapa Despachos) ---- */
   table.data-table th.col-ojo, table.data-table td.col-ojo { text-align: center; width: 52px; padding-left: 4px; padding-right: 4px; }
