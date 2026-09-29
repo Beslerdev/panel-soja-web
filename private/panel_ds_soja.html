@@ -243,6 +243,19 @@
   .filter-count button { font: inherit; color: var(--accent-text); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
   .filter-count .vacio { color: var(--warning); }
 
+  .oculto { display: none; }
+
+  /* ---- Pedidos a confirmar (solapa Despachos) ---- */
+  .btn-flag {
+    display: inline-flex; align-items: center; gap: 8px; font: inherit; font-size: 12.5px; font-weight: 700;
+    cursor: pointer; padding: 7px 14px; border-radius: 20px; border: 1px solid var(--gridline);
+    background: var(--surface-1); color: var(--text-secondary); transition: background .15s, border-color .15s, color .15s;
+    white-space: nowrap;
+  }
+  .btn-flag:hover { border-color: var(--warning); color: var(--warning); }
+  .btn-flag .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--warning); flex-shrink: 0; }
+  .btn-flag.activo { background: color-mix(in srgb, var(--warning) 14%, var(--surface-1)); border-color: var(--warning); color: var(--warning); }
+
   /* ---- Ojo de calidad (solapa Despachos) ---- */
   table.data-table th.col-ojo, table.data-table td.col-ojo { text-align: center; width: 52px; padding-left: 4px; padding-right: 4px; }
   .btn-ojo {
@@ -560,11 +573,24 @@
     <div class="kpi-row cols-3" id="kpiLogistica"></div>
 
     <div class="panel">
-      <div class="panel-head"><div><h2>Despachos registrados</h2><div class="caption">Hoja "Despacho" — se va completando a medida que avanza la campaña. Los indicadores solo cuentan pedidos con estado "Despachado"; los pedidos en planta, cargados o sin estado se muestran igual en la tabla pero no suman.</div></div></div>
+      <div class="panel-head">
+        <div><h2>Despachos registrados</h2><div class="caption">Hoja "Despacho" — se va completando a medida que avanza la campaña. Los indicadores solo cuentan pedidos con estado "Despachado"; los pedidos en planta, cargados o sin estado se muestran igual en la tabla pero no suman. Ordenados del más nuevo al más viejo. Los pedidos sin fecha confirmada están aparte, ver abajo.</div></div>
+        <button type="button" class="btn-flag" id="btnPorConfirmar"><span class="dot"></span><span id="txtPorConfirmar">Pedidos a confirmar</span></button>
+      </div>
+      <div class="table-scroll max-h">
+        <table class="data-table wide-left">
+          <thead><tr><th>Pedido</th><th>Cliente</th><th>Día de carga</th><th>Variedad</th><th>Presentación</th><th data-sum data-sum-suffix=" kg">Kg</th><th data-sum data-sum-suffix=" bls" data-sum-decimals="1">Bolsas</th><th>Lote final</th><th>Estado</th><th class="col-ojo">Calidad</th></tr></thead>
+          <tbody id="tablaDespacho"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel oculto" id="panelPorConfirmar">
+      <div class="panel-head"><div><h2>Pedidos a confirmar</h2><div class="caption">Todavía sin fecha de carga confirmada — el Excel los tiene como "A confirmar por el cliente". En cuanto se cargue una fecha real, pasan solos a la tabla de arriba.</div></div></div>
       <div class="table-scroll max-h">
         <table class="data-table wide-left">
           <thead><tr><th>Pedido</th><th>Cliente</th><th>Día de carga</th><th>Variedad</th><th>Presentación</th><th>Kg</th><th>Bolsas</th><th>Lote final</th><th>Estado</th><th class="col-ojo">Calidad</th></tr></thead>
-          <tbody id="tablaDespacho"></tbody>
+          <tbody id="tablaDespachoPorConfirmar"></tbody>
         </table>
       </div>
     </div>
@@ -1065,12 +1091,36 @@ function renderAll() {
     if (estado === 'Cargado' || estado === 'En Planta') return `<span class="status-badge info">${estado}</span>`;
     return '<span class="status-badge warn">Sin estado</span>';
   };
-  document.getElementById('tablaDespacho').innerHTML = DATA.despachos.map(d => `<tr>
+  const filaDespacho = d => `<tr>
       <td>${d.pedido}</td><td>${d.cliente}</td><td>${d.dia_carga || '—'}</td><td>${d.variedad}</td>
       <td>${d.presentacion}</td><td class="num">${fmt(d.kg)}</td><td class="num">${(d.kg && !esAGranel(d)) ? fmt1(d.kg / KG_POR_BOLSA) : '—'}</td><td>${d.lote_final || '—'}</td>
       <td>${estadoBadge(d.estado)}</td>
       <td class="col-ojo">${botonOjo(d.lote_final)}</td>
-    </tr>`).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--text-muted);">Sin despachos registrados todavía</td></tr>';
+    </tr>`;
+  // Pedidos con fecha de carga real van a la tabla principal, del más nuevo
+  // al más viejo. Los que todavía no tienen fecha confirmada ("A confirmar
+  // por el cliente", o cualquier otro texto sin fecha real) van aparte.
+  const despachosConFecha = DATA.despachos.filter(d => d.dia_carga_fecha);
+  const despachosPorConfirmar = DATA.despachos.filter(d => !d.dia_carga_fecha);
+  despachosConFecha.sort((a, b) => b.dia_carga_fecha.localeCompare(a.dia_carga_fecha) || String(a.pedido).localeCompare(String(b.pedido)));
+
+  document.getElementById('tablaDespacho').innerHTML = despachosConFecha.map(filaDespacho).join('')
+    || '<tr><td colspan="10" style="text-align:center;color:var(--text-muted);">Sin despachos registrados todavía</td></tr>';
+  document.getElementById('tablaDespachoPorConfirmar').innerHTML = despachosPorConfirmar.map(filaDespacho).join('')
+    || '<tr><td colspan="10" style="text-align:center;color:var(--text-muted);">No hay pedidos esperando fecha</td></tr>';
+
+  const btnPorConfirmar = document.getElementById('btnPorConfirmar');
+  const panelPorConfirmar = document.getElementById('panelPorConfirmar');
+  document.getElementById('txtPorConfirmar').textContent = 'Pedidos a confirmar (' + despachosPorConfirmar.length + ')';
+  btnPorConfirmar.style.display = despachosPorConfirmar.length ? '' : 'none';
+  if (!despachosPorConfirmar.length) panelPorConfirmar.classList.add('oculto');
+  if (!btnPorConfirmar._listo) {
+    btnPorConfirmar.addEventListener('click', () => {
+      panelPorConfirmar.classList.toggle('oculto');
+      btnPorConfirmar.classList.toggle('activo', !panelPorConfirmar.classList.contains('oculto'));
+    });
+    btnPorConfirmar._listo = true;
+  }
 
   // ================= STOCK =================
   const totalBolsas = DATA.bolsas_by_semilla.Trigo + DATA.bolsas_by_semilla.Soja;
@@ -1141,10 +1191,26 @@ function esFilaSinDatos(tr) {
   return tr.children.length === 1 && tr.children[0].hasAttribute('colspan');
 }
 
+// "9.360" -> 9360, "234,0" -> 234.0, "—" o vacio -> 0. Formato es-AR: "." de
+// miles, "," decimal — el mismo que usan fmt()/fmt1() al escribir la celda.
+function parseNumEs(txt) {
+  const t = (txt || '').trim();
+  if (!t || t === '—') return 0;
+  const n = parseFloat(t.replace(/\./g, '').replace(',', '.'));
+  return Number.isFinite(n) ? n : 0;
+}
+
+function formatSuma(n, decimales) {
+  return n.toLocaleString('es-AR', { minimumFractionDigits: decimales, maximumFractionDigits: decimales });
+}
+
 function aplicarFiltro(table) {
   const inputs = Array.from(table.querySelectorAll('tr.filter-row .f-input'));
   const criterios = inputs.map(i => i.value.trim().toLowerCase());
   inputs.forEach((i, n) => i.classList.toggle('activo', criterios[n] !== ''));
+
+  const sumCols = table._sumCols || [];
+  const sumas = sumCols.map(() => 0);
 
   let total = 0, visibles = 0;
   table.querySelectorAll('tbody tr').forEach(tr => {
@@ -1159,13 +1225,18 @@ function aplicarFiltro(table) {
       if (!txt.includes(criterios[n]) && !txt.replace(/\./g, '').includes(criterios[n])) pasa = false;
     }
     tr.style.display = pasa ? '' : 'none';
-    if (pasa) visibles++;
+    if (pasa) {
+      visibles++;
+      sumCols.forEach((c, i) => { sumas[i] += parseNumEs(tr.children[c.index] && tr.children[c.index].textContent); });
+    }
   });
 
   const activos = criterios.filter(c => c !== '').length;
   if (table._filtroInfo) {
     if (activos) {
-      table._filtroTexto.textContent = 'Mostrando ' + visibles + ' de ' + total;
+      let texto = 'Mostrando ' + visibles + ' de ' + total;
+      sumCols.forEach((c, i) => { texto += ' · ' + formatSuma(sumas[i], c.decimales) + c.sufijo; });
+      table._filtroTexto.textContent = texto;
       table._filtroTexto.classList.toggle('vacio', visibles === 0);
       table._filtroInfo.classList.add('visible');
     } else {
@@ -1182,6 +1253,19 @@ function prepararFiltros(table) {
   if (!thead || !tbody) return;
   const titulos = thead.querySelector('tr');
   if (!titulos || !titulos.children.length) return;
+
+  // Columnas que muestran su suma (de las filas visibles) junto al contador
+  // de filtro — hoy solo Kg y Bolsas en Despachos. Se lee de data-sum en el
+  // <th> original: no hace falta tocar DATA, es la misma capa independiente
+  // que ya arma la fila de filtros.
+  table._sumCols = Array.from(titulos.children)
+    .map((th, index) => ({ th, index }))
+    .filter(({ th }) => th.hasAttribute('data-sum'))
+    .map(({ th, index }) => ({
+      index,
+      sufijo: th.getAttribute('data-sum-suffix') || '',
+      decimales: parseInt(th.getAttribute('data-sum-decimals') || '0', 10),
+    }));
 
   const fila = document.createElement('tr');
   fila.className = 'filter-row';
