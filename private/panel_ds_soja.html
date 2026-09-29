@@ -1147,13 +1147,15 @@ function renderAll() {
   document.getElementById('tablaDespachoPorConfirmar').innerHTML = DESPACHOS_POR_CONFIRMAR.map(filaDespacho).join('')
     || '<tr><td colspan="10" style="text-align:center;color:var(--text-muted);">No hay pedidos esperando fecha</td></tr>';
 
-  // Chip de totales en la cabecera del panel: siempre visible, se recalcula
-  // solo (via _onSumas, ver aplicarFiltro) con las filas que van quedando
-  // visibles a medida que se filtra la tabla — sin filtros, son los totales
-  // de todos los despachos con fecha.
-  tablaDespachoEl.closest('table')._onSumas = (sumas, sumCols) => {
+  // Chip de totales en la cabecera del panel: recalcula solo (via _onSumas,
+  // ver aplicarFiltro) con las filas que van quedando visibles a medida que
+  // se filtra la tabla. Sin ningún filtro activo se deja vacío (se oculta
+  // por CSS) para no confundirlo con las tarjetas de arriba, que suman con
+  // otro criterio (solo "Despachado").
+  tablaDespachoEl.closest('table')._onSumas = (sumas, sumCols, visibles, total, activos) => {
     const chip = document.getElementById('chipTotalesDespacho');
     if (!chip) return;
+    if (!activos) { chip.innerHTML = ''; return; }
     chip.innerHTML = sumCols.map(
       (c, i) => '<b>' + formatSuma(sumas[i], c.decimales) + c.sufijo + '</b>'
     ).join(' <span class="sep">·</span> ');
@@ -1288,7 +1290,7 @@ function aplicarFiltro(table) {
       table._filtroInfo.classList.remove('visible');
     }
   }
-  if (typeof table._onSumas === 'function') table._onSumas(sumas, sumCols, visibles, total);
+  if (typeof table._onSumas === 'function') table._onSumas(sumas, sumCols, visibles, total, activos);
   return { total: total, visibles: visibles };
 }
 
