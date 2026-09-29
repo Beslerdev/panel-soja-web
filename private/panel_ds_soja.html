@@ -256,6 +256,16 @@
   .btn-flag .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--warning); flex-shrink: 0; }
   .btn-flag.activo { background: color-mix(in srgb, var(--warning) 14%, var(--surface-1)); border-color: var(--warning); color: var(--warning); }
 
+  .panel-head-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .totales-chip {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600;
+    color: var(--text-secondary); background: var(--page-plane); border: 1px solid var(--gridline);
+    border-radius: 20px; padding: 7px 14px; white-space: nowrap; font-family: var(--font-mono);
+  }
+  .totales-chip:empty { display: none; }
+  .totales-chip b { font-weight: 700; color: var(--text-primary); }
+  .totales-chip .sep { color: var(--text-muted); font-weight: 400; }
+
   /* ---- Ojo de calidad (solapa Despachos) ---- */
   table.data-table th.col-ojo, table.data-table td.col-ojo { text-align: center; width: 52px; padding-left: 4px; padding-right: 4px; }
   .btn-ojo {
@@ -273,6 +283,7 @@
   .modal-fondo { position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(20,24,16,.55); }
   .modal-fondo.abierto { display: flex; }
   .modal-caja { width: 100%; max-width: 480px; max-height: 86vh; overflow-y: auto; background: var(--surface-1); border-radius: 14px; box-shadow: var(--card-shadow-hover); }
+  .modal-caja.ancho { max-width: 920px; }
   .modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px 20px 14px; border-bottom: 1px solid var(--gridline); }
   .modal-head h3 { margin: 0; font-family: var(--font-display); font-size: 17px; color: var(--text-primary); }
   .modal-head .caption { margin-top: 3px; font-size: 12px; color: var(--text-muted); }
@@ -574,23 +585,16 @@
 
     <div class="panel">
       <div class="panel-head">
-        <div><h2>Despachos registrados</h2><div class="caption">Hoja "Despacho" — se va completando a medida que avanza la campaña. Los indicadores solo cuentan pedidos con estado "Despachado"; los pedidos en planta, cargados o sin estado se muestran igual en la tabla pero no suman. Ordenados del más nuevo al más viejo. Los pedidos sin fecha confirmada están aparte, ver abajo.</div></div>
-        <button type="button" class="btn-flag" id="btnPorConfirmar"><span class="dot"></span><span id="txtPorConfirmar">Pedidos a confirmar</span></button>
+        <div><h2>Despachos registrados</h2><div class="caption">Hoja "Despacho" — se va completando a medida que avanza la campaña. Los indicadores solo cuentan pedidos con estado "Despachado"; los pedidos en planta, cargados o sin estado se muestran igual en la tabla pero no suman. Ordenados del más nuevo al más viejo. Los pedidos sin fecha confirmada están en "Pedidos a confirmar".</div></div>
+        <div class="panel-head-actions">
+          <div class="totales-chip" id="chipTotalesDespacho"></div>
+          <button type="button" class="btn-flag" id="btnPorConfirmar"><span class="dot"></span><span id="txtPorConfirmar">Pedidos a confirmar</span></button>
+        </div>
       </div>
       <div class="table-scroll max-h">
         <table class="data-table wide-left">
           <thead><tr><th>Pedido</th><th>Cliente</th><th>Día de carga</th><th>Variedad</th><th>Presentación</th><th data-sum data-sum-suffix=" kg">Kg</th><th data-sum data-sum-suffix=" bls" data-sum-decimals="1">Bolsas</th><th>Lote final</th><th>Estado</th><th class="col-ojo">Calidad</th></tr></thead>
           <tbody id="tablaDespacho"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="panel oculto" id="panelPorConfirmar">
-      <div class="panel-head"><div><h2>Pedidos a confirmar</h2><div class="caption">Todavía sin fecha de carga confirmada — el Excel los tiene como "A confirmar por el cliente". En cuanto se cargue una fecha real, pasan solos a la tabla de arriba.</div></div></div>
-      <div class="table-scroll max-h">
-        <table class="data-table wide-left">
-          <thead><tr><th>Pedido</th><th>Cliente</th><th>Día de carga</th><th>Variedad</th><th>Presentación</th><th>Kg</th><th>Bolsas</th><th>Lote final</th><th>Estado</th><th class="col-ojo">Calidad</th></tr></thead>
-          <tbody id="tablaDespachoPorConfirmar"></tbody>
         </table>
       </div>
     </div>
@@ -662,6 +666,27 @@
   </footer>
 </div>
 
+<!-- Ventana de pedidos a confirmar (solapa Despachos) -->
+<div class="modal-fondo" id="modalPorConfirmar" role="dialog" aria-modal="true" aria-labelledby="modalPorConfirmarTitulo">
+  <div class="modal-caja ancho">
+    <div class="modal-head">
+      <div>
+        <h3 id="modalPorConfirmarTitulo">Pedidos a confirmar</h3>
+        <div class="caption">Todavía sin fecha de carga confirmada — el Excel los tiene como "A confirmar por el cliente". En cuanto se cargue una fecha real, pasan solos a la tabla principal.</div>
+      </div>
+      <button class="modal-cerrar" id="modalPorConfirmarCerrar" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="modal-cuerpo">
+      <div class="table-scroll max-h">
+        <table class="data-table wide-left">
+          <thead><tr><th>Pedido</th><th>Cliente</th><th>Día de carga</th><th>Variedad</th><th>Presentación</th><th>Kg</th><th>Bolsas</th><th>Lote final</th><th>Estado</th><th class="col-ojo">Calidad</th></tr></thead>
+          <tbody id="tablaDespachoPorConfirmar"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Ventana de calidad del lote (solapa Despachos) -->
 <div class="modal-fondo" id="modalCalidad" role="dialog" aria-modal="true" aria-labelledby="modalCalidadTitulo">
   <div class="modal-caja">
@@ -678,6 +703,7 @@
 
 <script>
 let DATA = null;
+let DESPACHOS_POR_CONFIRMAR = [];
 </script>
 <script>
 
@@ -729,6 +755,23 @@ const DESTINOS_A_GRANEL = ['PUERTO'];
 function esAGranel(d) {
   return DESTINOS_A_GRANEL.includes(String(d && d.cliente || '').trim().toUpperCase());
 }
+
+// Fila de la tabla de Despacho — se usa tanto para la tabla principal como
+// para la ventana de "Pedidos a confirmar" (mismo formato de fila).
+function estadoBadgeDespacho(estado) {
+  if (estado === 'Despachado') return `<span class="status-badge ok">${estado}</span>`;
+  if (estado === 'Cargado' || estado === 'En Planta') return `<span class="status-badge info">${estado}</span>`;
+  return '<span class="status-badge warn">Sin estado</span>';
+}
+function filaDespacho(d) {
+  return `<tr>
+      <td>${d.pedido}</td><td>${d.cliente}</td><td>${d.dia_carga || '—'}</td><td>${d.variedad}</td>
+      <td>${d.presentacion}</td><td class="num">${fmt(d.kg)}</td><td class="num">${(d.kg && !esAGranel(d)) ? fmt1(d.kg / KG_POR_BOLSA) : '—'}</td><td>${d.lote_final || '—'}</td>
+      <td>${estadoBadgeDespacho(d.estado)}</td>
+      <td class="col-ojo">${botonOjo(d.lote_final)}</td>
+    </tr>`;
+}
+
 function fmt(n) { return Math.round(n).toLocaleString('es-AR'); }
 function fmt1(n) { return n.toLocaleString('es-AR', { maximumFractionDigits: 1 }); }
 function pct(n) { return n.toLocaleString('es-AR', { maximumFractionDigits: 1 }) + '%'; }
@@ -1086,39 +1129,37 @@ function renderAll() {
             (aGranel.length ? ' · no incluye ' + aGranel.length + (aGranel.length === 1 ? ' despacho a granel' : ' despachos a granel') : ''),
       icon:'bag'}),
   ].join('');
-  const estadoBadge = (estado) => {
-    if (estado === 'Despachado') return `<span class="status-badge ok">${estado}</span>`;
-    if (estado === 'Cargado' || estado === 'En Planta') return `<span class="status-badge info">${estado}</span>`;
-    return '<span class="status-badge warn">Sin estado</span>';
-  };
-  const filaDespacho = d => `<tr>
-      <td>${d.pedido}</td><td>${d.cliente}</td><td>${d.dia_carga || '—'}</td><td>${d.variedad}</td>
-      <td>${d.presentacion}</td><td class="num">${fmt(d.kg)}</td><td class="num">${(d.kg && !esAGranel(d)) ? fmt1(d.kg / KG_POR_BOLSA) : '—'}</td><td>${d.lote_final || '—'}</td>
-      <td>${estadoBadge(d.estado)}</td>
-      <td class="col-ojo">${botonOjo(d.lote_final)}</td>
-    </tr>`;
   // Pedidos con fecha de carga real van a la tabla principal, del más nuevo
   // al más viejo. Los que todavía no tienen fecha confirmada ("A confirmar
-  // por el cliente", o cualquier otro texto sin fecha real) van aparte.
+  // por el cliente", o cualquier otro texto sin fecha real) se muestran en
+  // la ventana de "Pedidos a confirmar".
   const despachosConFecha = DATA.despachos.filter(d => d.dia_carga_fecha);
-  const despachosPorConfirmar = DATA.despachos.filter(d => !d.dia_carga_fecha);
+  DESPACHOS_POR_CONFIRMAR = DATA.despachos.filter(d => !d.dia_carga_fecha);
   despachosConFecha.sort((a, b) => b.dia_carga_fecha.localeCompare(a.dia_carga_fecha) || String(a.pedido).localeCompare(String(b.pedido)));
 
-  document.getElementById('tablaDespacho').innerHTML = despachosConFecha.map(filaDespacho).join('')
+  const tablaDespachoEl = document.getElementById('tablaDespacho');
+  tablaDespachoEl.innerHTML = despachosConFecha.map(filaDespacho).join('')
     || '<tr><td colspan="10" style="text-align:center;color:var(--text-muted);">Sin despachos registrados todavía</td></tr>';
-  document.getElementById('tablaDespachoPorConfirmar').innerHTML = despachosPorConfirmar.map(filaDespacho).join('')
+  document.getElementById('tablaDespachoPorConfirmar').innerHTML = DESPACHOS_POR_CONFIRMAR.map(filaDespacho).join('')
     || '<tr><td colspan="10" style="text-align:center;color:var(--text-muted);">No hay pedidos esperando fecha</td></tr>';
 
+  // Chip de totales en la cabecera del panel: siempre visible, se recalcula
+  // solo (via _onSumas, ver aplicarFiltro) con las filas que van quedando
+  // visibles a medida que se filtra la tabla — sin filtros, son los totales
+  // de todos los despachos con fecha.
+  tablaDespachoEl.closest('table')._onSumas = (sumas, sumCols) => {
+    const chip = document.getElementById('chipTotalesDespacho');
+    if (!chip) return;
+    chip.innerHTML = sumCols.map(
+      (c, i) => '<b>' + formatSuma(sumas[i], c.decimales) + c.sufijo + '</b>'
+    ).join(' <span class="sep">·</span> ');
+  };
+
   const btnPorConfirmar = document.getElementById('btnPorConfirmar');
-  const panelPorConfirmar = document.getElementById('panelPorConfirmar');
-  document.getElementById('txtPorConfirmar').textContent = 'Pedidos a confirmar (' + despachosPorConfirmar.length + ')';
-  btnPorConfirmar.style.display = despachosPorConfirmar.length ? '' : 'none';
-  if (!despachosPorConfirmar.length) panelPorConfirmar.classList.add('oculto');
+  document.getElementById('txtPorConfirmar').textContent = 'Pedidos a confirmar (' + DESPACHOS_POR_CONFIRMAR.length + ')';
+  btnPorConfirmar.style.display = DESPACHOS_POR_CONFIRMAR.length ? '' : 'none';
   if (!btnPorConfirmar._listo) {
-    btnPorConfirmar.addEventListener('click', () => {
-      panelPorConfirmar.classList.toggle('oculto');
-      btnPorConfirmar.classList.toggle('activo', !panelPorConfirmar.classList.contains('oculto'));
-    });
+    btnPorConfirmar.addEventListener('click', () => abrirPorConfirmar());
     btnPorConfirmar._listo = true;
   }
 
@@ -1243,6 +1284,7 @@ function aplicarFiltro(table) {
       table._filtroInfo.classList.remove('visible');
     }
   }
+  if (typeof table._onSumas === 'function') table._onSumas(sumas, sumCols, visibles, total);
   return { total: total, visibles: visibles };
 }
 
@@ -1418,15 +1460,34 @@ function cerrarCalidad() {
   document.getElementById('modalCalidad').classList.remove('abierto');
 }
 
+// Ventana de "Pedidos a confirmar" (solapa Despachos) — mismo patrón que
+// la ventana de calidad, la tabla ya está armada en el DOM por renderAll().
+function abrirPorConfirmar() {
+  document.getElementById('modalPorConfirmar').classList.add('abierto');
+  const cerrar = document.getElementById('modalPorConfirmarCerrar');
+  if (cerrar) cerrar.focus();
+}
+
+function cerrarPorConfirmar() {
+  document.getElementById('modalPorConfirmar').classList.remove('abierto');
+}
+
 document.addEventListener('click', (e) => {
   const boton = e.target.closest('.btn-ojo');
   if (boton && !boton.disabled && boton.dataset.lote) { abrirCalidad(boton.dataset.lote); return; }
   if (e.target.closest('#modalCalidadCerrar')) { cerrarCalidad(); return; }
   if (e.target.id === 'modalCalidad') cerrarCalidad(); // clic fuera de la caja
+  if (e.target.closest('#modalPorConfirmarCerrar')) { cerrarPorConfirmar(); return; }
+  if (e.target.id === 'modalPorConfirmar') cerrarPorConfirmar(); // clic fuera de la caja
 });
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') cerrarCalidad();
+  if (e.key !== 'Escape') return;
+  // Si las dos ventanas están abiertas (calidad se abre desde adentro de
+  // "Pedidos a confirmar"), Escape cierra primero la de arriba (calidad) y
+  // deja la de abajo como estaba — no las dos de un solo golpe.
+  if (document.getElementById('modalCalidad').classList.contains('abierto')) cerrarCalidad();
+  else cerrarPorConfirmar();
 });
 
 async function cargarPanel() {
