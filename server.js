@@ -105,22 +105,31 @@ async function buildPanelData() {
   ];
 
   const results = {};
+  let ultimaCarga = null;
   for (const t of tables) {
     const { data, error } = await supabaseAdmin.from(t).select('*');
     if (error) throw new Error(`Error leyendo ${t}: ${error.message}`);
     results[t] = data || [];
+    for (const fila of results[t]) {
+      if (!fila.created_at) continue;
+      const marca = new Date(fila.created_at).getTime();
+      if (!Number.isNaN(marca) && (ultimaCarga === null || marca > ultimaCarga)) ultimaCarga = marca;
+    }
   }
 
-  return transformRows(results);
+  return { data: transformRows(results), actualizado: ultimaCarga !== null ? new Date(ultimaCarga).toISOString() : null };
 }
 
 app.get('/api/data', requireAuthApi, async (req, res) => {
   try {
-    const data = await buildPanelData();
+    const { data, actualizado } = await buildPanelData();
     res.json({
       data,
       usuario: req.session.user,
-      actualizado: new Date().toISOString(),
+      // Momento real de la última carga de datos (el más nuevo entre los "created_at"
+      // que deja Supabase al reemplazar las tablas), no el momento en que este usuario
+      // abrió el panel.
+      actualizado,
     });
   } catch (err) {
     console.error(err);
