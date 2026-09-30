@@ -221,6 +221,12 @@
   table.data-table thead tr:first-child th:last-child { border-top-right-radius: 10px; }
   table.data-table tbody tr:hover { background: var(--page-plane); }
   table.data-table td.num { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+  /* Columna Cliente de Despachos: es la más ancha con diferencia (nombres de
+     empresa largos) y la que hace que la tabla necesite scroll horizontal,
+     tapando Estado y Calidad. Se recorta con "…" y el nombre completo queda
+     disponible al pasar el mouse (title). Solo en la tabla principal — en la
+     ventana "Pedidos a confirmar" (más ancha) no hace falta. */
+  #tablaDespacho td:nth-child(2) { max-width: 190px; overflow: hidden; text-overflow: ellipsis; }
   .table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
   .table-scroll.max-h { max-height: 480px; overflow-y: auto; }
   .table-scroll.max-h thead th { position: sticky; top: 0; z-index: 1; }
@@ -769,7 +775,7 @@ function estadoBadgeDespacho(estado) {
 }
 function filaDespacho(d) {
   return `<tr>
-      <td>${d.pedido}</td><td>${d.cliente}</td><td>${d.dia_carga || '—'}</td><td>${d.variedad}</td>
+      <td>${d.pedido}</td><td title="${d.cliente}">${d.cliente}</td><td>${d.dia_carga || '—'}</td><td>${d.variedad}</td>
       <td>${d.presentacion}</td><td class="num">${fmt(d.kg)}</td><td class="num">${(d.kg && !esAGranel(d)) ? fmt1(d.kg / KG_POR_BOLSA) : '—'}</td><td>${d.lote_final || '—'}</td>
       <td>${estadoBadgeDespacho(d.estado)}</td>
       <td class="col-ojo">${botonOjo(d.lote_final)}</td>
