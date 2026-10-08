@@ -200,6 +200,11 @@ function extractDespachos(wb) {
       kg: row['Cant. kg'],
       lote_final,
       estado: row['Estado'],
+      // Columna nueva (2026-10-08): número de camión del día. Junto con
+      // "Dia de carga" identifica el camión real que salió de planta —
+      // varias líneas (pedidos) pueden compartir un mismo camión. Puede
+      // venir vacía en despachos anteriores a que se agregara esta columna.
+      camion: row['Camión'],
     });
   }
   return out;
@@ -410,7 +415,7 @@ function buildSql(xlsxPath) {
 
   addTable(
     'despachos',
-    ['pedido', 'cliente', 'dia_carga', 'variedad', 'presentacion', 'cantidad', 'kg', 'lote_final', 'estado'],
+    ['pedido', 'cliente', 'dia_carga', 'variedad', 'presentacion', 'cantidad', 'kg', 'lote_final', 'estado', 'camion'],
     despachos
   );
 
