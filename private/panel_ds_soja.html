@@ -1131,27 +1131,19 @@ function renderAll() {
   const kgDespachado = despachados.reduce((s,d)=>s+d.kg,0);
   const aGranel = despachados.filter(esAGranel);
   const kgEmbolsado = despachados.filter(d => !esAGranel(d)).reduce((s,d)=>s+d.kg,0);
-  // Camiones realmente despachados: un mismo camión puede llevar varias
-  // líneas (pedidos) de una vez, así que contar filas sobrestima camiones.
-  // Se agrupan por "día de carga + número de camión" (columna "Camión" de
-  // la hoja Despacho, agregada el 08/10) — eso es 1 camión real, sin
-  // importar cuántas líneas lleve. Las líneas que todavía no tienen el
-  // camión cargado (despachos de antes de que existiera la columna, o
-  // casos sueltos) se cuentan una por una como antes: nunca se agrupan
-  // entre sí solo por compartir el día, porque en los datos reales eso
-  // junta camiones distintos que no hay forma de diferenciar sin el dato.
-  const tieneCamion = (d) => d.camion !== null && d.camion !== undefined && d.camion !== '';
-  const despachadosSinCamion = despachados.filter(d => !tieneCamion(d)).length;
-  const camionesAgrupados = new Set(
-    despachados.filter(tieneCamion).map(d => d.dia_carga_fecha + '|' + d.camion)
-  ).size;
-  const camionesDespachados = camionesAgrupados + despachadosSinCamion;
+  // Camiones realmente despachados: 1 camión = la cantidad de filas del
+  // mismo día de carga que comparten el mismo número en la columna
+  // "Camión" (hoja Despacho, agregada el 08/10). Una línea sin número de
+  // camión cargado cuenta como su propio camión (nunca se agrupa con otra
+  // solo por compartir el día, porque en los datos reales eso junta
+  // camiones distintos que no hay forma de diferenciar sin el dato).
+  const claveCamion = (d) => d.dia_carga_fecha + '|' + (
+    (d.camion !== null && d.camion !== undefined && d.camion !== '') ? d.camion : ('sin-camion-' + d.pedido)
+  );
+  const camionesDespachados = new Set(despachados.map(claveCamion)).size;
   document.getElementById('kpiLogistica').innerHTML = [
     kpiCard('Despachos registrados', despachados.length, {icon:'layers'}),
-    kpiCard('Camiones despachados', camionesDespachados, {icon:'truck',
-      note: despachadosSinCamion
-        ? despachadosSinCamion + (despachadosSinCamion === 1 ? ' despacho sin camión cargado, contado aparte' : ' despachos sin camión cargado, contados aparte')
-        : 'agrupado por día de carga + número de camión'}),
+    kpiCard('Camiones despachados', camionesDespachados, {icon:'truck'}),
     kpiCard('Kg despachados', kgDespachado, {unit:' kg', icon:'package'}),
     kpiCard('Bolsas despachadas', Math.round(kgEmbolsado / KG_POR_BOLSA), {unit:' bls',
       note: 'equivalente en bolsas de ' + KG_POR_BOLSA + ' kg' +
