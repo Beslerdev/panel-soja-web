@@ -1148,8 +1148,8 @@ function renderAll() {
   );
   const camionesDespachados = new Set(despachados.map(claveCamion)).size;
   document.getElementById('kpiLogistica').innerHTML = [
-    kpiCard('Despachos registrados', despachados.length, {icon:'layers',
-      note: DATA.kpi_oferta.total_venta ? (fmt1(pctDespachadoVenta) + '% de la venta total despachado') : ''}),
+    kpiCard('Porcentaje de despacho', pctDespachadoVenta, {unit:'%', decimals:1,
+      note:'sobre el total de ventas confirmadas', icon:'layers'}),
     kpiCard('Camiones despachados', camionesDespachados, {icon:'truck'}),
     kpiCard('Kg despachados', kgDespachado, {unit:' kg', icon:'package'}),
     kpiCard('Bolsas despachadas', Math.round(bolsasDespachadas), {unit:' bls',
