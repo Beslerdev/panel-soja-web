@@ -1131,6 +1131,12 @@ function renderAll() {
   const kgDespachado = despachados.reduce((s,d)=>s+d.kg,0);
   const aGranel = despachados.filter(esAGranel);
   const kgEmbolsado = despachados.filter(d => !esAGranel(d)).reduce((s,d)=>s+d.kg,0);
+  const bolsasDespachadas = kgEmbolsado / KG_POR_BOLSA;
+  // % de lo vendido (hoja Oferta, "Venta total" en bolsas) que ya salió de
+  // planta: bolsas despachadas (sin contar a granel, igual que la tarjeta
+  // "Bolsas despachadas") sobre DATA.kpi_oferta.total_venta.
+  const pctDespachadoVenta = DATA.kpi_oferta.total_venta
+    ? (bolsasDespachadas / DATA.kpi_oferta.total_venta) * 100 : 0;
   // Camiones realmente despachados: 1 camión = la cantidad de filas del
   // mismo día de carga que comparten el mismo número en la columna
   // "Camión" (hoja Despacho, agregada el 08/10). Una línea sin número de
@@ -1142,10 +1148,11 @@ function renderAll() {
   );
   const camionesDespachados = new Set(despachados.map(claveCamion)).size;
   document.getElementById('kpiLogistica').innerHTML = [
-    kpiCard('Despachos registrados', despachados.length, {icon:'layers'}),
+    kpiCard('Despachos registrados', despachados.length, {icon:'layers',
+      note: DATA.kpi_oferta.total_venta ? (fmt1(pctDespachadoVenta) + '% de la venta total despachado') : ''}),
     kpiCard('Camiones despachados', camionesDespachados, {icon:'truck'}),
     kpiCard('Kg despachados', kgDespachado, {unit:' kg', icon:'package'}),
-    kpiCard('Bolsas despachadas', Math.round(kgEmbolsado / KG_POR_BOLSA), {unit:' bls',
+    kpiCard('Bolsas despachadas', Math.round(bolsasDespachadas), {unit:' bls',
       note: 'equivalente en bolsas de ' + KG_POR_BOLSA + ' kg' +
             (aGranel.length ? ' · no incluye ' + aGranel.length + (aGranel.length === 1 ? ' despacho a granel' : ' despachos a granel') : ''),
       icon:'bag'}),
