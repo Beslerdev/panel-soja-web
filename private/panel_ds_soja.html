@@ -271,6 +271,9 @@
   .totales-chip:empty { display: none; }
   .totales-chip b { font-weight: 700; color: var(--accent-text); }
   .totales-chip .sep { color: var(--text-muted); font-weight: 400; font-size: 13px; }
+  .totales-chip.balanza { flex-wrap: wrap; justify-content: flex-end; row-gap: 2px; }
+  .totales-chip .lbl { font-family: var(--font-body); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); }
+  .totales-chip .ton { color: var(--text-secondary); font-weight: 600; font-size: 13px; }
 
   /* ---- Ojo de calidad (solapa Despachos) ---- */
   table.data-table th.col-ojo, table.data-table td.col-ojo { text-align: center; width: 52px; padding-left: 4px; padding-right: 4px; }
@@ -535,10 +538,13 @@
     </div>
 
     <div class="panel">
-      <div class="panel-head"><div><h2>Detalle de camiones</h2><div class="caption" id="captionBalanzaTabla"></div></div></div>
+      <div class="panel-head">
+        <div><h2>Detalle de camiones</h2><div class="caption" id="captionBalanzaTabla"></div></div>
+        <div class="panel-head-actions"><div class="totales-chip balanza" id="chipTotalesBalanza"></div></div>
+      </div>
       <div class="table-scroll max-h">
         <table class="data-table wide-left">
-          <thead><tr><th>Fecha</th><th>Chofer</th><th>Campo</th><th>Variedad</th><th>Categoría</th><th>Silo</th><th>Neto (kg)</th><th>Merma (kg)</th></tr></thead>
+          <thead><tr><th>Fecha</th><th>Chofer</th><th>Campo</th><th>Variedad</th><th>Categoría</th><th>Silo</th><th data-sum data-sum-suffix=" kg">Neto (kg)</th><th data-sum data-sum-suffix=" kg" data-sum-decimals="1">Merma (kg)</th></tr></thead>
           <tbody id="tablaBalanza"></tbody>
         </table>
       </div>
@@ -1140,6 +1146,20 @@ function renderAll() {
       <td>${b.fecha}</td><td>${b.chofer}</td><td>${b.campo}</td><td>${b.variedad}</td>
       <td>${b.categoria}</td><td>${b.silo}</td><td class="num">${fmt(b.neto)}</td><td class="num">${fmt1(b.merma + b.merma_viento)}</td>
     </tr>`).join('');
+
+  // Contador de la tabla de camiones: siempre visible. Sin filtros suma toda
+  // la tabla; al filtrar (por fecha, campo, variedad, silo...) suma solo los
+  // camiones que quedan a la vista. El neto va también en toneladas.
+  document.getElementById('tablaBalanza').closest('table')._onSumas = (sumas, sumCols, visibles, total, activos) => {
+    const chip = document.getElementById('chipTotalesBalanza');
+    if (!chip) return;
+    const neto = sumas[0] || 0, merma = sumas[1] || 0;
+    const ton = (neto / 1000).toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    chip.innerHTML =
+      `<span class="lbl">${activos ? 'Filtrado · ' + visibles + ' de ' + total + ' camiones' : 'Total · ' + total + ' camiones'}</span>` +
+      ` <span class="sep">·</span> Neto <b>${formatSuma(neto, 0)} kg</b> <span class="ton">(${ton} t)</span>` +
+      ` <span class="sep">·</span> Merma <b>${formatSuma(merma, 1)} kg</b>`;
+  };
 
   // ================= PRODUCCION =================
   const okCal = DATA.calidad_counts['Si'] || 0;
