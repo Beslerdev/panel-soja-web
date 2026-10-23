@@ -29,7 +29,30 @@ function dstr(v) {
     const d = String(v.getUTCDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
   }
+  // Una celda con FORMATO DE NUMERO (en lugar de formato de fecha) no llega
+  // como Date sino como el "numero de serie" de Excel: 46281 es 16/09/2026.
+  // Pasa cuando alguien tipea una fecha en una celda que quedo sin formatear
+  // — apareció en Intermedio!V80 ("Fin" del lote S264-2STOO) y rompia la
+  // importacion entera con "column fin is of type date but expression is of
+  // type integer". Se convierte a fecha en vez de cortar la corrida.
+  // El rango 20000-60000 (1954 a 2064) evita tomar por fecha un numero que
+  // en realidad es otra cosa; cualquier otro valor se deja como estaba.
+  if (typeof v === 'number' && Number.isFinite(v) && v >= 20000 && v <= 60000) {
+    const d = new Date(Date.UTC(1899, 11, 30) + Math.round(v) * 86400000);
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(d.getUTCDate()).padStart(2, '0');
+    return `${y}-${m}-${dd}`;
+  }
   return v;
+}
+
+// Los encabezados del Excel a veces traen espacios al borde ('PG ', 'Merma ').
+// Se recortan al armar el mapa de columnas, asi el mapeo no depende de esos
+// espacios: si alguien los agrega o los saca, la columna se sigue encontrando.
+// (La columna 'PG ' de la hoja Intermedio se venia importando vacia por esto.)
+function hdrName(v) {
+  return typeof v === 'string' ? v.trim() : v;
 }
 
 function stripOrNone(v) {
@@ -87,13 +110,14 @@ function sheetRows(ws, headerRow, idCol, filterFn) {
   idCol = idCol || 1;
   const { maxRow, maxCol } = sheetBounds(ws);
   const headers = [];
-  for (let c = 1; c <= maxCol; c++) headers.push(cellAt(ws, headerRow, c));
+  for (let c = 1; c <= maxCol; c++) headers.push(hdrName(cellAt(ws, headerRow, c)));
   const rows = [];
   for (let r = headerRow + 1; r <= maxRow; r++) {
     if (cellAt(ws, r, idCol) === null) continue;
     const row = {};
     for (let c = 1; c <= maxCol; c++) row[headers[c - 1]] = cellAt(ws, r, c);
     if (filterFn && !filterFn(row)) continue;
+    row.__fila = r; // numero de fila del Excel, para poder señalarla en los avisos
     rows.push(row);
   }
   return rows;
@@ -109,7 +133,15 @@ function extractVentas(wb) {
   // vta_id NOT NULL en Supabase, así que acá se descartan explícitamente las
   // filas sin vta_id, en vez de confiar en la columna 1 como proxy.
   const rows = sheetRows(ws, 3, 1, (row) => row['vta_id'] !== null && row['vta_id'] !== undefined);
-  return rows.map((row) => ({
+  // Ventas canceladas: cantidad en 0 (ver el comentario de esVentaCancelada).
+  const vivas = rows.filter((row) => {
+    if (esVentaCancelada(row)) {
+      OMITIDAS.ventasCanceladas.push({ fila: row.__fila, vta_id: row['vta_id'], cliente: row['Cliente'] });
+      return false;
+    }
+    return true;
+  });
+  return vivas.map((row) => ({
     vta_id: row['vta_id'],
     fecha: dstr(row['Fecha']),
     cliente: row['Cliente'],
@@ -123,6 +155,11 @@ function extractVentas(wb) {
     fecha_entrega: dstr(row['Fecha Entrega']),
     kg_total: row['Kg Total'],
     control_pendiente: row['Control'],
+    // Clave de la línea (columna "id"): pedido + variedad + cliente + envase + cantidad.
+    // Es lo que "Prod. Final" usa en "Concatenado" para apuntar a esta venta;
+    // con eso el panel calcula vencidos / por vencer por línea.
+    linea_id: row['id'],
+    __fila: row.__fila,
   }));
 }
 
@@ -138,8 +175,9 @@ function extractBalanza(wb) {
     categoria: row['Categoria'],
     neto: row['Neto'],
     silo: row['SILO'],
-    merma: row['Merma '] || 0,
-    merma_viento: row['Merma viento '] || 0,
+    merma: row['Merma'] || 0,
+    merma_viento: row['Merma viento'] || 0,
+    __fila: row.__fila,
   }));
 }
 
@@ -159,13 +197,24 @@ function extractLotes(wb) {
     pureza: row['Pureza'],
     ok_calidad: row['Ok Calidad'],
     pg: row['PG'],
+    pg_curado: row['PG Curado'],
+    p1000: row['P1000'],
+    __fila: row.__fila,
   }));
 }
 
 function extractProdFinal(wb) {
   const ws = wb.Sheets['Prod. Final'];
   const rows = sheetRows(ws, 3);
-  return rows.map((row) => ({
+  // Filas cuyo BUSCARV no encontro la venta: la venta esta cancelada.
+  const utiles = rows.filter((row) => {
+    if (esFilaSinVenta(row)) {
+      OMITIDAS.prodSinVenta.push({ fila: row.__fila, venta: row['VENTA'] });
+      return false;
+    }
+    return true;
+  });
+  return utiles.map((row) => ({
     vta_id: row['vta_id'],
     venta: row['VENTA'],
     estado: row['Estado'],
@@ -175,6 +224,13 @@ function extractProdFinal(wb) {
     kg: row['Cantidad KG'],
     lote_final: row['Lote Final'],
     fecha_entrega: dstr(row['fecha_entrega']),
+    // Para "Vencidos y por vencer": a qué línea de venta pertenece la fila
+    // (Concatenado = id de Ventas Finn) y cuánto de ella ya salió de planta.
+    linea_id: row['Concatenado'],
+    cantidad: row['Cantidad'],
+    despachado: row['Despachado'],
+    pend_despacho: row['Pend. Despacho'],
+    __fila: row.__fila,
   }));
 }
 
@@ -182,7 +238,7 @@ function extractDespachos(wb) {
   const ws = wb.Sheets['Despacho'];
   const { maxRow, maxCol } = sheetBounds(ws);
   const headers = [];
-  for (let c = 1; c <= maxCol; c++) headers.push(cellAt(ws, 2, c));
+  for (let c = 1; c <= maxCol; c++) headers.push(hdrName(cellAt(ws, 2, c)));
   const out = [];
   for (let r = 3; r <= maxRow; r++) {
     if (cellAt(ws, r, 1) === null) continue;
@@ -205,6 +261,7 @@ function extractDespachos(wb) {
       // varias líneas (pedidos) pueden compartir un mismo camión. Puede
       // venir vacía en despachos anteriores a que se agregara esta columna.
       camion: row['Camión'],
+      __fila: r,
     });
   }
   return out;
@@ -243,21 +300,46 @@ function extractStock(wb) {
 
 function extractPlanCurado(wb) {
   const ws = wb.Sheets['Plan Curado'];
+  const { maxCol } = sheetBounds(ws);
+  const headerRow = 8;
+  // Columnas por nombre de encabezado, no por posicion fija: si se inserta
+  // o reordena una columna en esta hoja (pasó el 2026-10-19, al agregar
+  // "Categoria" -Primu/Original- antes de "Pendiente total", corriendo
+  // todo un lugar a la derecha) esto sigue encontrando cada dato por su
+  // nombre en vez de leer lo que haya quedado en la posicion vieja.
+  const col = {};
+  for (let c = 1; c <= maxCol; c++) {
+    const h = hdrName(cellAt(ws, headerRow, c));
+    if (h) col[h] = c;
+  }
+  const cVariedad = col['Variedad'] || 1;
+  const cTratamiento = col['Tratamiento'] || 2;
+  const cPendiente = col['Pendiente total'];
+  const cCuradoDisp = col['Curado disp.'];
+  const cNeto = col['Neto a curar'];
+  const cSinFecha = col['Sin fecha'];
+
   const planCurado = [];
-  let r = 9;
-  while (cellAt(ws, r, 1) !== null) {
+  let r = headerRow + 1;
+  while (cellAt(ws, r, cVariedad) !== null) {
     planCurado.push({
-      variedad: cellAt(ws, r, 1),
-      tratamiento: cellAt(ws, r, 2),
-      pendiente_total: cellAt(ws, r, 4),
-      curado_disp: cellAt(ws, r, 5),
-      neto_a_curar: cellAt(ws, r, 6),
+      variedad: cellAt(ws, r, cVariedad),
+      tratamiento: cellAt(ws, r, cTratamiento),
+      pendiente_total: cPendiente ? cellAt(ws, r, cPendiente) : null,
+      curado_disp: cCuradoDisp ? cellAt(ws, r, cCuradoDisp) : null,
+      neto_a_curar: cNeto ? cellAt(ws, r, cNeto) : null,
     });
     r += 1;
   }
+
+  // Igual que arriba: arranca donde esté de verdad la columna "Sin fecha"
+  // (antes era siempre la 7), y llega hasta la ultima columna real de la
+  // hoja en vez de cortar en la 17 — asi tampoco se pierde la ultima
+  // semana del cronograma cuando se agregan mas columnas de fecha.
   const weekly = [];
-  for (let c = 7; c <= 17; c++) {
-    let label = cellAt(ws, 8, c);
+  const startCol = cSinFecha || 7;
+  for (let c = startCol; c <= maxCol; c++) {
+    let label = cellAt(ws, headerRow, c);
     if (label instanceof Date) label = dstr(label);
     weekly.push({ semana: label, kg: cellAt(ws, 4, c) || 0 });
   }
@@ -268,7 +350,7 @@ function extractLotesCurado(wb) {
   const ws = wb.Sheets['Intermedio curado'];
   const { maxRow, maxCol } = sheetBounds(ws);
   const headers = [];
-  for (let c = 1; c <= maxCol; c++) headers.push(cellAt(ws, 3, c));
+  for (let c = 1; c <= maxCol; c++) headers.push(hdrName(cellAt(ws, 3, c)));
   const out = [];
   for (let r = 4; r <= maxRow; r++) {
     const row = {};
@@ -292,6 +374,7 @@ function extractLotesCurado(wb) {
       hora_fin: dstr(row['Hora fin']),
       horas_prod: row['Horas Prod.'],
       kg_hs: row['Kg/Hs'],
+      __fila: r,
     });
   }
   return out;
@@ -331,9 +414,144 @@ function extractCalendario(wb) {
       blomar_fin: fmtTimeCell(cellAt(ws, r, 7)),
       horas_blomar: cleanHours(cellAt(ws, r, 8)),
       observacion: cellAt(ws, r, 9),
+      __fila: r,
     });
   }
   return out;
+}
+
+// ---------------- ventas canceladas ----------------
+
+/*
+ * Una venta cancelada, en el Excel, es una fila con vta_id cargado y Cantidad
+ * en 0. No es una convención inventada acá: es la misma condición del formato
+ * condicional de la hoja "Ventas Finn", el que las muestra tachadas en rojo —
+ *
+ *     rango A4:Y434   ->   AND($B4<>"", $J4=0)   ->   tachado
+ *     (columna B = vta_id, columna J = Cantidad)
+ *
+ * Esas ventas no se importan. Y las filas de "Prod. Final" que apuntan a una
+ * de ellas tampoco: su BUSCARV no encuentra la venta y devuelve "SIN VENTA"
+ * en toda la fila, así que no hay dato que cargar.
+ *
+ * Nada de esto se descarta en silencio: lo omitido se cuenta y se informa por
+ * pantalla al final de la corrida.
+ */
+
+const OMITIDAS = { ventasCanceladas: [], prodSinVenta: [] };
+
+function esVentaCancelada(row) {
+  const cant = row['Cantidad'];
+  return cant === 0 || cant === null || cant === undefined || cant === '';
+}
+
+function esFilaSinVenta(row) {
+  const marca = (v) => typeof v === 'string' && v.trim().toUpperCase() === 'SIN VENTA';
+  return marca(row['vta_id']) || marca(row['Cantidad KG']) || marca(row['Firma']);
+}
+
+// ---------------- control previo de columnas numéricas ----------------
+
+/*
+ * Antes de mandar nada a Supabase, revisa que las columnas que en la base son
+ * numéricas traigan números. Si una celda del Excel tiene texto —el caso típico
+ * es un BUSCARV que no encuentra la venta y devuelve "SIN VENTA"— Supabase
+ * rechaza el bloque entero con un error como:
+ *
+ *   invalid input syntax for type numeric: "SIN VENTA"
+ *
+ * que no dice en qué hoja ni en qué fila está el problema. Este control lo
+ * encuentra antes y lo informa con hoja, fila y columna.
+ *
+ * No corrige ni convierte nada: si todo está bien, la importación sigue
+ * exactamente igual que antes.
+ */
+
+// Por tabla: la hoja del Excel, las columnas numéricas (con el nombre que
+// tienen en el Excel, para que el aviso sea reconocible), y las columnas que
+// sirven para identificar la fila.
+// Ojo: en 'lotes', las columnas pg / pg_curado / p1000 son TEXT en la base
+// (los valores de laboratorio a veces vienen con texto), asi que no se controlan aca.
+const COLUMNAS_NUMERICAS = {
+  pedidos_venta:         { hoja: 'Ventas Finn',           num: { cantidad: 'Cantidad', kg_total: 'Kg Total', control_pendiente: 'Control' },                          id: ['vta_id', 'cliente'] },
+  balanza:               { hoja: 'Balanza',               num: { neto: 'Neto', merma: 'Merma', merma_viento: 'Merma viento' },                                          id: ['fecha', 'chofer'] },
+  lotes:                 { hoja: 'Intermedio',            num: { kg: 'Kg Intermedio', kg_hr: 'Kg/hr' },                                                                             id: ['lote', 'variedad'] },
+  produccion_final:      { hoja: 'Prod. Final',           num: { kg: 'Cantidad KG', cantidad: 'Cantidad', despachado: 'Despachado', pend_despacho: 'Pend. Despacho' },                                                                                   id: ['venta', 'vta_id', 'cliente'] },
+  despachos:             { hoja: 'Despacho',              num: { cantidad: 'Cantidad', kg: 'Cant. kg' },                                                                id: ['pedido', 'cliente'] },
+  stock_resumen_marca:   { hoja: 'Stock 2026',            num: { pintados: 'Pintados', sin_pintar: 'Sin pintar', nuevos: 'Nuevos' },                                    id: ['marca'] },
+  stock_bolsas_semilla:  { hoja: 'Stock 2026',            num: { bolsas: 'Bolsas' },                                                                                    id: ['semilla'] },
+  plan_curado:           { hoja: 'Plan Curado',           num: { pendiente_total: 'Pendiente total', curado_disp: 'Curado disp.', neto_a_curar: 'Neto a curar' },       id: ['variedad'] },
+  plan_curado_semanal:   { hoja: 'Plan Curado',           num: { kg: 'Kg' },                                                                                            id: ['semana'] },
+  lotes_curado:          { hoja: 'Intermedio curado',     num: { kg_disp_inter: 'Kg. Disp. Inter.', kg_consumidos: 'Kg. Consumidos', kg_producidos: 'Kg. Producidos', kg_disponibles: 'Kg. Disponibles', horas_prod: 'Horas Prod.', kg_hs: 'Kg/Hs' }, id: ['lote_final', 'lote_intermedio'] },
+  calendario_produccion: { hoja: 'Calendario Produccion', num: { horas_gessi: 'Horas Gessi', horas_blomar: 'Horas Blomar' },                                            id: ['fecha'] },
+};
+
+// Vacío o número está bien. Solo molesta el texto que no sea un número.
+function esNumeroAceptable(v) {
+  if (v === null || v === undefined || v === '') return true;
+  if (typeof v === 'number') return Number.isFinite(v);
+  if (typeof v === 'boolean') return false;
+  if (typeof v === 'string') {
+    const t = v.trim();
+    if (t === '') return true;
+    return /^-?\d+([.,]\d+)?$/.test(t.replace(/\s/g, ''));
+  }
+  return false;
+}
+
+function revisarNumericos(table, rows) {
+  const def = COLUMNAS_NUMERICAS[table];
+  if (!def) return [];
+  const problemas = [];
+  rows.forEach((row, i) => {
+    const malas = [];
+    for (const [col, enExcel] of Object.entries(def.num)) {
+      if (!esNumeroAceptable(row[col])) malas.push({ col: enExcel, valor: row[col] });
+    }
+    if (!malas.length) return;
+    const ident = def.id.map((k) => row[k]).find((v) => v !== null && v !== undefined && v !== '' && v !== 'SIN VENTA');
+    problemas.push({
+      tabla: table,
+      hoja: def.hoja,
+      fila: row.__fila || null,
+      posicion: i + 1,
+      ident: ident !== undefined ? String(ident) : null,
+      malas,
+    });
+  });
+  return problemas;
+}
+
+function mensajeDeProblemas(problemas) {
+  const lineas = [];
+  lineas.push('');
+  lineas.push('='.repeat(64));
+  lineas.push('  NO SE IMPORTO NADA');
+  lineas.push('='.repeat(64));
+  lineas.push('');
+  lineas.push('  Hay celdas con texto donde la base espera un numero.');
+  lineas.push('  Supabase rechazaria la carga completa, asi que se corta antes.');
+  lineas.push('');
+  const porHoja = {};
+  for (const p of problemas) (porHoja[p.hoja] = porHoja[p.hoja] || []).push(p);
+  for (const [hoja, lista] of Object.entries(porHoja)) {
+    lineas.push(`  Hoja "${hoja}":`);
+    for (const p of lista.slice(0, 15)) {
+      const donde = p.fila ? `fila ${p.fila}` : `linea ${p.posicion} de la tabla`;
+      const quien = p.ident ? ` (${p.ident})` : '';
+      const qué = p.malas.map((m) => `${m.col} = ${JSON.stringify(m.valor)}`).join(', ');
+      lineas.push(`    ${donde}${quien}  ->  ${qué}`);
+    }
+    if (lista.length > 15) lineas.push(`    ... y ${lista.length - 15} filas mas`);
+    lineas.push('');
+  }
+  lineas.push('  El caso mas comun es "SIN VENTA": el BUSCARV de "Prod. Final" no');
+  lineas.push('  encuentra la venta en "Ventas Finn" porque le cambiaron la');
+  lineas.push('  presentacion o la cantidad, y la clave concatenada dejo de');
+  lineas.push('  coincidir. Revisa esas ventas y volve a correr.');
+  lineas.push('');
+  lineas.push('  La base quedo intacta: no se envio nada.');
+  return lineas.join('\n');
 }
 
 // ---------------- armado del SQL ----------------
@@ -360,6 +578,8 @@ function insertStmt(table, columns, rows) {
 
 function buildSql(xlsxPath) {
   const wb = xlsx.readFile(xlsxPath, { cellDates: true });
+  OMITIDAS.ventasCanceladas = [];
+  OMITIDAS.prodSinVenta = [];
 
   const ventas = extractVentas(wb);
   const balanza = extractBalanza(wb);
@@ -374,9 +594,11 @@ function buildSql(xlsxPath) {
 
   const blocks = [];
   const counts = {};
+  const problemas = [];
 
   function addTable(table, columns, rows) {
     counts[table] = rows.length;
+    problemas.push(...revisarNumericos(table, rows));
     // "WHERE true" es necesario: Supabase tiene activada la protección
     // "safeupdate", que bloquea cualquier DELETE/UPDATE sin WHERE (para
     // evitar borrados accidentales de toda la tabla). Con WHERE true se
@@ -391,7 +613,7 @@ function buildSql(xlsxPath) {
   addTable(
     'pedidos_venta',
     ['vta_id', 'fecha', 'cliente', 'categoria', 'semillero', 'variedad', 'cantidad', 'vendedor',
-      'tratamiento', 'presentacion', 'fecha_entrega', 'kg_total', 'control_pendiente'],
+      'tratamiento', 'presentacion', 'fecha_entrega', 'kg_total', 'control_pendiente', 'linea_id'],
     ventas
   );
 
@@ -403,13 +625,14 @@ function buildSql(xlsxPath) {
 
   addTable(
     'lotes',
-    ['lote', 'procedencia', 'variedad', 'area', 'kg', 'kg_hr', 'paro', 'detalle_paro', 'fin', 'pureza', 'ok_calidad', 'pg'],
+    ['lote', 'procedencia', 'variedad', 'area', 'kg', 'kg_hr', 'paro', 'detalle_paro', 'fin', 'pureza', 'ok_calidad', 'pg', 'pg_curado', 'p1000'],
     lotes
   );
 
   addTable(
     'produccion_final',
-    ['vta_id', 'venta', 'estado', 'cliente', 'variedad', 'presentacion', 'kg', 'lote_final', 'fecha_entrega'],
+    ['vta_id', 'venta', 'estado', 'cliente', 'variedad', 'presentacion', 'kg', 'lote_final', 'fecha_entrega',
+      'linea_id', 'cantidad', 'despachado', 'pend_despacho'],
     prodfinal
   );
 
@@ -446,8 +669,14 @@ function buildSql(xlsxPath) {
     calendario
   );
 
+  if (problemas.length) {
+    const e = new Error(mensajeDeProblemas(problemas));
+    e.esProblemaDeDatos = true;
+    throw e;
+  }
+
   const sql = `BEGIN;\n\n${blocks.join('\n\n')}\n\nCOMMIT;\n`;
-  return { sql, counts };
+  return { sql, counts, omitidas: { ventasCanceladas: [...OMITIDAS.ventasCanceladas], prodSinVenta: [...OMITIDAS.prodSinVenta] } };
 }
 
 function stripTransactionWrapper(sql) {
@@ -502,7 +731,9 @@ async function enviarASupabase(sql) {
   }
 }
 
-module.exports = { buildSql, esc, dstr, fmtTimeCell, cleanHours, stripOrNone, stripTransactionWrapper };
+module.exports = { buildSql, esc, dstr, fmtTimeCell, cleanHours, stripOrNone, stripTransactionWrapper,
+  esNumeroAceptable, revisarNumericos, mensajeDeProblemas, COLUMNAS_NUMERICAS,
+  esVentaCancelada, esFilaSinVenta };
 
 // ---------------- CLI ----------------
 
@@ -519,10 +750,33 @@ async function main() {
 
   const t0 = Date.now();
   console.log(`Leyendo ${path.basename(xlsxPath)} y armando el SQL...`);
-  const { sql, counts } = buildSql(xlsxPath);
+  let sql, counts, omitidas;
+  try {
+    ({ sql, counts, omitidas } = buildSql(xlsxPath));
+  } catch (err) {
+    if (err.esProblemaDeDatos) {
+      console.log(err.message);
+      process.exit(1);
+    }
+    throw err;
+  }
   const t1 = Date.now();
   console.log(`  listo en ${((t1 - t0) / 1000).toFixed(1)}s. Filas por tabla:`);
   for (const [t, n] of Object.entries(counts)) console.log(`    ${t}: ${n}`);
+
+  const vc = omitidas.ventasCanceladas, pv = omitidas.prodSinVenta;
+  if (vc.length || pv.length) {
+    console.log('');
+    console.log('  Ventas canceladas (cantidad 0, las que se ven tachadas en el Excel):');
+    if (vc.length) {
+      console.log(`    ${vc.length} en "Ventas Finn" -> no van a pedidos_venta`);
+      for (const o of vc) console.log(`       fila ${o.fila}  ${o.vta_id}  (${o.cliente || 'sin cliente'})`);
+    }
+    if (pv.length) {
+      console.log(`    ${pv.length} en "Prod. Final" -> no van a produccion_final (su venta esta cancelada)`);
+      for (const o of pv) console.log(`       fila ${o.fila}  venta ${o.venta}`);
+    }
+  }
 
   console.log('Enviando a Supabase...');
   try {
