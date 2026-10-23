@@ -354,11 +354,22 @@
   #tablaLlamados td, #tablaVencidosLineas td { vertical-align: top; }
   table.venc-table th, table.venc-table td { text-align: left; }
   table.venc-table th.n, table.venc-table td.num { text-align: right; }
-  #tablaLlamados td.cli { white-space: normal; min-width: 190px; font-weight: 700; }
+  #tablaLlamados td.cli { font-weight: 700; }
   #tablaLlamados td.cli .sub { display: block; font-weight: 400; font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
-  #tablaLlamados td.wrap, #tablaVencidosLineas td.wrap { white-space: normal; min-width: 150px; font-size: 12px; color: var(--text-secondary); }
+  #tablaLlamados td.wrap, #tablaVencidosLineas td.wrap { color: var(--text-secondary); }
   #tablaLlamados .status-badge { white-space: normal; line-height: 1.3; }
-  #tablaLlamados td:nth-child(3) { min-width: 250px; }
+  /* Las dos tablas entran en el ancho del panel: columnas fijas y texto que
+     baja de renglón, en vez de scroll horizontal. */
+  table.venc-table { table-layout: fixed; width: 100%; }
+  table.venc-table th, table.venc-table td { white-space: normal; padding: 8px 6px; overflow-wrap: anywhere; }
+  table.venc-table thead th { font-size: 9.5px; letter-spacing: .03em; line-height: 1.25; }
+  table.venc-table td { font-size: 12px; }
+  table.venc-table td.num { font-size: 11.5px; }
+  .venc-table .f-input { min-width: 0; padding: 3px 4px; font-size: 10.5px; }
+  #tablaLlamados td.cli { min-width: 0; }
+  #tablaLlamados td.wrap, #tablaVencidosLineas td.wrap { min-width: 0; font-size: 11.5px; }
+  #tablaLlamados .status-badge { font-size: 11px; padding: 3px 8px; }
+  td .sub2 { display: block; font-size: 11px; color: var(--text-muted); margin-top: 2px; }
   td.num.rojo { color: var(--critical); font-weight: 700; }
   td.num.cero { color: var(--text-muted); }
   .venc-bar { display: flex; height: 5px; border-radius: 3px; overflow: hidden; background: var(--gridline); margin: 5px 0 0 auto; }
@@ -442,7 +453,7 @@
     <nav class="tabs" id="tabs">
       <button data-view="oferta" class="active">Oferta</button>
       <button data-view="logistica">Despachos</button>
-      <button data-view="vencidos">Vencidos</button>
+      <button data-view="vencidos">Pedidos con fecha de entrega</button>
       <button data-view="pedidos">Estado de pedidos</button>
       <button data-view="comercial">Comercial</button>
       <button data-view="produccion">Producción</button>
@@ -632,7 +643,7 @@
 
   <!-- ===================== VENCIDOS Y POR VENCER ===================== -->
   <section class="view" id="view-vencidos">
-    <div class="area-head"><div class="eyebrow">SEGUIMIENTO DE ENTREGAS</div><h1>Vencidos y por vencer</h1><p id="vencSubtitulo">Pedidos con fecha de entrega pasada o que vencen esta semana</p></div>
+    <div class="area-head"><div class="eyebrow">SEGUIMIENTO DE ENTREGAS</div><h1>Pedidos con fecha de entrega</h1><p id="vencSubtitulo">Pedidos con fecha de entrega pasada o que vencen esta semana</p></div>
     <div class="callout" id="calloutVencidos"></div>
     <div class="kpi-row cols-4" id="kpiVencidos"></div>
 
@@ -640,7 +651,8 @@
       <div class="panel-head"><div><h2>Lista de llamados</h2><div class="caption">Un cliente por fila. Orden: vencido con carga lista en planta (más kilos listos primero), vencido sin carga lista, por vencer con carga lista, por vencer sin carga. La barra muestra cuánto de lo pendiente está listo.</div></div></div>
       <div class="table-scroll max-h">
         <table class="data-table venc-table">
-          <thead><tr><th>#</th><th>Cliente / pedidos</th><th>Acción</th><th>Variedades</th><th class="n">Kg vencidos</th><th class="n">Kg por vencer</th><th class="n">Kg listos</th><th class="n">Sin producir</th><th class="n">Días atraso</th><th class="n">Próx. entrega</th><th>Programación</th></tr></thead>
+          <colgroup><col style="width:3.5%"><col style="width:21%"><col style="width:17%"><col style="width:13%"><col style="width:8.5%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:5.5%"><col style="width:7.5%"></colgroup>
+          <thead><tr><th>#</th><th>Cliente · pedidos · variedades</th><th>Acción</th><th>Programación</th><th class="n">Kg vencidos</th><th class="n">Kg por vencer</th><th class="n">Kg listos</th><th class="n">Sin producir</th><th class="n">Días atraso</th><th class="n">Próx. entrega</th></tr></thead>
           <tbody id="tablaLlamados"></tbody>
         </table>
       </div>
@@ -668,7 +680,8 @@
       <div class="panel-head"><div><h2>Detalle por línea de pedido</h2><div class="caption" id="captionVencLineas"></div></div></div>
       <div class="table-scroll max-h">
         <table class="data-table venc-table">
-          <thead><tr><th>Estado</th><th>Cliente</th><th>Pedido</th><th>Variedad</th><th>Envase</th><th class="n">Entrega</th><th class="n">Días</th><th class="n" data-sum data-sum-suffix=" kg">Kg pedido</th><th class="n" data-sum data-sum-suffix=" kg">Kg desp.</th><th class="n" data-sum data-sum-suffix=" kg">Kg pend.</th><th class="n" data-sum data-sum-suffix=" kg">Kg listos</th><th>Programación</th><th>Vendedor</th></tr></thead>
+          <colgroup><col style="width:10%"><col style="width:22%"><col style="width:14%"><col style="width:7%"><col style="width:5%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:8%"></colgroup>
+          <thead><tr><th>Estado</th><th>Cliente · pedido</th><th>Variedad · envase</th><th class="n">Entrega</th><th class="n">Días</th><th class="n" data-sum data-sum-suffix=" kg">Kg pedido</th><th class="n" data-sum data-sum-suffix=" kg">Kg desp.</th><th class="n" data-sum data-sum-suffix=" kg">Kg pend.</th><th class="n" data-sum data-sum-suffix=" kg">Kg listos</th><th>Program.</th></tr></thead>
           <tbody id="tablaVencidosLineas"></tbody>
         </table>
       </div>
@@ -1352,18 +1365,17 @@ function renderVencidos() {
     const pl = pend ? (100 * Math.min(c.kg_listo, pend) / pend) : 0;
     return `<tr>
       <td class="num cero">${c.prioridad}</td>
-      <td class="cli">${escAttr(c.cliente)}<span class="sub">${escAttr(c.pedidos)}</span></td>
+      <td class="cli">${escAttr(c.cliente)}<span class="sub">${escAttr(c.pedidos)} · ${escAttr(c.variedades.replace(/, /g, ' · '))}</span></td>
       <td><span class="status-badge ${badge[c.grupo]}">${escAttr(c.accion)}</span></td>
-      <td class="wrap">${escAttr(c.variedades.replace(/, /g, ' · '))}</td>
-      <td class="num">${n0(c.kg_vencido)}<div class="venc-bar" style="width:72px"><span style="width:${pl.toFixed(0)}%;background:var(--accent)"></span><span style="width:${(100 - pl).toFixed(0)}%;background:var(--series-3)"></span></div></td>
+      <td class="wrap">${escAttr(c.programacion)}</td>
+      <td class="num">${n0(c.kg_vencido)}<div class="venc-bar" style="width:100%"><span style="width:${pl.toFixed(0)}%;background:var(--accent)"></span><span style="width:${(100 - pl).toFixed(0)}%;background:var(--series-3)"></span></div></td>
       <td class="num">${n0(c.kg_por_vencer)}</td>
       <td class="num">${n0(c.kg_listo)}</td>
       <td class="num">${n0(c.kg_sin_producir)}</td>
       <td class="num ${c.dias_atraso >= 14 ? 'rojo' : ''}">${c.dias_atraso || '—'}</td>
       <td class="num">${ddmm(c.prox_entrega)}</td>
-      <td class="wrap">${escAttr(c.programacion)}</td>
     </tr>`;
-  }).join('') || '<tr><td colspan="11" style="text-align:center;color:var(--text-muted);">No hay pedidos vencidos ni por vencer</td></tr>';
+  }).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--text-muted);">No hay pedidos vencidos ni por vencer</td></tr>';
 
   const maxVar = Math.max(1, ...V.variedades.map(v => v.kg_vencido));
   document.getElementById('vencVariedades').innerHTML = V.variedades.map(v => {
@@ -1401,12 +1413,12 @@ function renderVencidos() {
   document.getElementById('captionVencLineas').textContent = lineas.length + ' líneas con kilos sin despachar (vencidas, por vencer y a tiempo). Usá los filtros de cada columna.';
   document.getElementById('tablaVencidosLineas').innerHTML = lineas.map(r => `<tr>
       <td><span class="status-badge ${estBadge[r.estado] || 'info'}">${r.estado}</span></td>
-      <td>${escAttr(r.cliente)}</td><td>${escAttr(r.pedido)}</td><td>${escAttr(r.variedad)}</td><td>${escAttr(r.envase || '')}</td>
+      <td>${escAttr(r.cliente)}<span class="sub2">${escAttr([r.pedido, r.vendedor].filter(Boolean).join(' · '))}</span></td><td>${escAttr(r.variedad)}<span class="sub2">${escAttr(r.envase || '')}</span></td>
       <td class="num">${ddmm(r.fecha_entrega)}</td>
       <td class="num ${r.estado === 'Vencido' && r.dias_atraso >= 14 ? 'rojo' : ''}">${r.dias_atraso > 0 ? r.dias_atraso : ''}</td>
       <td class="num">${fmt(r.kg_pedido)}</td><td class="num">${fmt(r.kg_despachado)}</td><td class="num">${fmt(r.kg_pendiente)}</td><td class="num">${fmt(r.kg_listo)}</td>
-      <td class="wrap">${escAttr(r.programacion)}</td><td>${escAttr(r.vendedor || '')}</td>
-    </tr>`).join('') || '<tr><td colspan="13" style="text-align:center;color:var(--text-muted);">Sin datos</td></tr>';
+ <td class="wrap">${escAttr(r.programacion)}</td>
+    </tr>`).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--text-muted);">Sin datos</td></tr>';
 }
 
 
