@@ -642,6 +642,11 @@ function buildSql(xlsxPath) {
     despachos
   );
 
+  // Cupos y Programacion de Camiones: cada vez que se actualiza el reporte de
+  // Despachos, sincroniza las cargas automaticamente (crea las nuevas, marca
+  // como despachadas las que ya salieron) dentro de la misma transaccion.
+  blocks.push('SELECT cupos_sincronizar_desde_despachos();');
+
   addTable('stock_resumen_marca', ['marca', 'pintados', 'sin_pintar', 'nuevos'], resumenMarca);
 
   addTable('stock_bolsas_semilla', ['semilla', 'bolsas'], bolsasList);
