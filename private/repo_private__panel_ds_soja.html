@@ -1,0 +1,2420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DS Hnos — Panel de Campaña</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1:      #ffffff;
+    --page-plane:     #efe7d5;
+    --text-primary:   #23281c;
+    --text-secondary: #6b6555;
+    --text-muted:     #948d79;
+    --gridline:       #e6ddc6;
+    --baseline:       #cabf9e;
+    --border:         rgba(35,40,28,.12);
+    --header-bg:      #232b1a;
+    --header-text:    #f3efe2;
+    --table-head-bg:  #303b24;
+    --accent:         #2f7d3f;
+    --accent-text:    #1e5e2c;
+    --series-1:       #c2410c;
+    --series-2:       #2f7d3f;
+    --series-3:       #b8860a;
+    --series-4:       #7c3aed;
+    --good:           #2f7d3f;
+    --good-text:      #1e5e2c;
+    --critical:       #b0392f;
+    --warning:        #b8860a;
+    --card-shadow:    0 1px 2px rgba(35,40,28,.05), 0 10px 28px -16px rgba(35,40,28,.22);
+    --card-shadow-hover: 0 2px 4px rgba(35,40,28,.06), 0 16px 34px -16px rgba(35,40,28,.28);
+    --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    --font-mono: "JetBrains Mono", "SF Mono", Consolas, "Roboto Mono", "Courier New", monospace;
+    --font-body: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-1:      #1e2317;
+    --page-plane:     #15170f;
+    --text-primary:   #f3efe2;
+    --text-secondary: #b7ad97;
+    --text-muted:     #837a68;
+    --gridline:       #2c3122;
+    --baseline:       #3c4130;
+    --border:         rgba(243,239,226,.12);
+    --header-bg:      #171d10;
+    --table-head-bg:  #242d19;
+    --header-text:    #f3efe2;
+    --accent:         #4fae63;
+    --accent-text:    #7fd191;
+    --series-1:       #e0682c;
+    --series-2:       #4fae63;
+    --series-3:       #d9a52e;
+    --series-4:       #a374f0;
+    --good:           #4fae63;
+    --good-text:      #7fd191;
+    --critical:       #e2685c;
+    --warning:        #d9a52e;
+    --card-shadow:    0 1px 2px rgba(0,0,0,.35), 0 12px 30px -16px rgba(0,0,0,.55);
+    --card-shadow-hover: 0 2px 4px rgba(0,0,0,.4), 0 18px 38px -16px rgba(0,0,0,.6);
+    --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    --font-mono: "JetBrains Mono", "SF Mono", Consolas, "Roboto Mono", "Courier New", monospace;
+    --font-body: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: var(--font-body);
+    background: var(--page-plane); color: var(--text-primary); transition: background .2s, color .2s;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 0 60px; }
+  .inner { padding: 0 24px; }
+
+  .sticky-head {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--page-plane);
+    box-shadow: 0 4px 14px -6px rgba(0,0,0,.28);
+  }
+  header.topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 26px; margin-bottom: 0; flex-wrap: wrap; gap: 12px;
+    background: var(--header-bg); color: var(--header-text);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand .logo {
+    width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0;
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: center; color: #fff;
+  }
+  .brand .logo svg { width: 19px; height: 19px; stroke: #fff; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .brand .name { font-size: 15px; font-weight: 700; letter-spacing: -.005em; color: var(--header-text); }
+  .brand .sub { font-size: 12px; color: rgba(243,239,226,.62); margin-top: 1px; }
+  .topbar-actions { display: flex; align-items: center; gap: 10px; }
+  .badge-note {
+    font-size: 11.5px; font-weight: 600; letter-spacing: .01em; color: var(--header-text);
+    border: 1px solid rgba(243,239,226,.22); background: rgba(243,239,226,.08); padding: 6px 13px; border-radius: 20px;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .badge-note::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+  button.toggle {
+    font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; padding: 8px 15px; border-radius: 20px;
+    border: 1px solid rgba(243,239,226,.28); background: transparent; color: var(--header-text);
+    transition: background .15s, border-color .15s;
+  }
+  button.toggle:hover { background: rgba(243,239,226,.1); border-color: rgba(243,239,226,.4); }
+
+  nav.tabs {
+    display: flex; gap: 6px; flex-wrap: wrap; margin: 0;
+    padding: 14px 24px; background: var(--page-plane); border-bottom: 1px solid var(--border);
+  }
+  nav.tabs button {
+    font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; padding: 9px 16px;
+    border: 1px solid var(--border); background: var(--surface-1); color: var(--text-secondary); border-radius: 20px;
+    transition: background .12s, color .12s, border-color .12s, box-shadow .12s; box-shadow: var(--card-shadow);
+  }
+  nav.tabs button:hover:not(.active) { color: var(--text-primary); border-color: var(--text-muted); }
+  nav.tabs button.active { color: var(--header-text); background: var(--header-bg); border-color: var(--header-bg); }
+
+  .view { display: none; }
+  .view.active { display: block; animation: fadein .18s ease; }
+  @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+
+  .area-head { margin: 26px 0 22px; padding: 0 24px; }
+  .area-head .eyebrow {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--text-muted); margin-bottom: 7px;
+  }
+  .area-head h1 {
+    font-family: var(--font-display); font-weight: 400; font-style: italic; font-size: 32px; letter-spacing: -0.01em; margin: 0;
+    line-height: 1.1; color: var(--text-primary);
+  }
+  .area-head p { font-size: 13.5px; color: var(--text-secondary); margin: 7px 0 0; }
+
+  .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 22px; padding: 0 24px; }
+  .kpi-row.cols-4 { grid-template-columns: repeat(4, 1fr); }
+  .kpi-row.cols-6 { grid-template-columns: repeat(6, 1fr); }
+  .kpi-row.cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .kpi {
+    position: relative;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 16px;
+    padding: 20px 20px 18px; box-shadow: var(--card-shadow);
+    transition: box-shadow .18s ease, transform .18s ease;
+  }
+  .kpi:hover { box-shadow: var(--card-shadow-hover); transform: translateY(-2px); }
+  .kpi .icon-chip {
+    width: 40px; height: 40px; border-radius: 11px; margin-bottom: 16px;
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface-1));
+    display: flex; align-items: center; justify-content: center;
+  }
+  .kpi .icon-chip svg { width: 20px; height: 20px; stroke: var(--accent); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .kpi .label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); margin-bottom: 9px; }
+  .kpi .value { font-family: var(--font-body); font-size: 25px; font-weight: 700; letter-spacing: -0.015em; font-variant-numeric: proportional-nums; color: var(--text-primary); }
+  .kpi .value .unit { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-left: 3px; }
+  .kpi .note { font-size: 12px; color: var(--accent-text); margin-top: 7px; font-weight: 600; }
+  .kpi .spark { display: block; width: 100%; height: 26px; margin-top: 10px; overflow: visible; }
+  .kpi .spark path.spark-line {
+    fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    stroke-dasharray: 100; stroke-dashoffset: 100; animation: drawLine 1s cubic-bezier(.22,1,.36,1) forwards .3s;
+  }
+  .kpi .spark path.spark-fill { fill: var(--accent); opacity: 0; animation: sparkFadeIn .8s ease forwards .35s; }
+  @keyframes sparkFadeIn { to { opacity: .12; } }
+
+  .panel {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 16px;
+    padding: 20px 22px 18px; margin: 0 24px 18px; box-shadow: var(--card-shadow);
+    transition: box-shadow .18s ease;
+  }
+  .panel-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+  .panel-head h2 { font-size: 15px; margin: 0; font-weight: 700; letter-spacing: -0.005em; }
+  .panel-head .caption { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  .legend { display: flex; gap: 16px; font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+  .legend .item { display: flex; align-items: center; gap: 6px; }
+  .legend .swatch { width: 9px; height: 9px; border-radius: 2.5px; }
+
+  .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding: 0 24px; }
+  .chart-row.thirds { grid-template-columns: 1.2fr 1fr; }
+  .chart-row .panel { margin: 0; }
+  @media (max-width: 860px) {
+    .chart-row, .chart-row.thirds { grid-template-columns: 1fr; }
+    .kpi-row, .kpi-row.cols-4, .kpi-row.cols-6 { grid-template-columns: repeat(2,1fr); }
+  }
+
+  svg text { font-family: var(--font-body); }
+  .axis-label { fill: var(--text-muted); font-size: 10.5px; font-weight: 600; }
+  .gridline { stroke: var(--gridline); stroke-width: 1; }
+  .baseline { stroke: var(--baseline); stroke-width: 1; }
+  .bar {
+    cursor: pointer; transition: opacity .12s;
+    transform-box: fill-box; transform-origin: bottom;
+    animation: barGrow .55s cubic-bezier(.22,1,.36,1) backwards;
+  }
+  .bar:hover { opacity: .8; }
+  circle.bar { transform-origin: center; }
+  @keyframes barGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+  .dot-marker { animation: dotPop .35s cubic-bezier(.22,1,.36,1) backwards; }
+  @keyframes dotPop { from { transform: scale(0); } to { transform: scale(1); } }
+  .line-path { stroke-dasharray: 100; stroke-dashoffset: 100; animation: drawLine 1.15s cubic-bezier(.22,1,.36,1) forwards; }
+  @keyframes drawLine { to { stroke-dashoffset: 0; } }
+  .area-fill { opacity: 0; animation: areaFadeIn .9s ease forwards .4s; }
+  @keyframes areaFadeIn { to { opacity: 1; } }
+
+  .tooltip {
+    position: absolute; pointer-events: none; background: var(--header-bg); color: var(--header-text);
+    font-size: 12px; padding: 7px 10px; border-radius: 8px; opacity: 0; transform: translateY(4px);
+    transition: opacity .12s, transform .12s; white-space: nowrap; z-index: 5; box-shadow: 0 6px 18px rgba(0,0,0,.25);
+    font-weight: 600;
+  }
+  .tooltip.show { opacity: 1; transform: translateY(0); }
+  .tooltip .t-title { font-weight: 700; margin-bottom: 3px; }
+  .tooltip .t-row { display: flex; gap: 8px; align-items: center; }
+  .tooltip .dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+
+  table.data-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.data-table th, table.data-table td { padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--gridline); white-space: nowrap; }
+  table.data-table th:first-child, table.data-table td:first-child,
+  table.data-table th:nth-child(2), table.data-table td:nth-child(2) { text-align: left; }
+  table.wide-left th:nth-child(3), table.wide-left td:nth-child(3) { text-align: left; }
+  table.data-table thead th { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--header-text); font-weight: 700; background: var(--table-head-bg); }
+  table.data-table thead tr:first-child th:first-child { border-top-left-radius: 10px; }
+  table.data-table thead tr:first-child th:last-child { border-top-right-radius: 10px; }
+  table.data-table tbody tr:hover { background: var(--page-plane); }
+  table.data-table td.num { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+  /* Columna Cliente de Despachos: es la más ancha con diferencia (nombres de
+     empresa largos) y la que hace que la tabla necesite scroll horizontal,
+     tapando Estado y Calidad. Se recorta con "…" y el nombre completo queda
+     disponible al pasar el mouse (title). Solo en la tabla principal — en la
+     ventana "Pedidos a confirmar" (más ancha) no hace falta. */
+  #tablaDespacho td:nth-child(2) { max-width: 190px; overflow: hidden; text-overflow: ellipsis; }
+  .table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+  .table-scroll.max-h { max-height: 480px; overflow-y: auto; }
+  .table-scroll.max-h thead th { position: sticky; top: 0; z-index: 1; }
+
+  /* ---- Filtros por columna ---- */
+  table.data-table thead tr.filter-row th { padding: 6px 8px; background: var(--table-head-bg); border-bottom: 1px solid var(--gridline); }
+  .f-input {
+    width: 100%; min-width: 58px; box-sizing: border-box;
+    font-family: var(--font-body); font-size: 11.5px; font-weight: 400;
+    letter-spacing: 0; text-transform: none; text-align: left;
+    padding: 4px 7px; color: var(--header-text);
+    background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.22); border-radius: 6px;
+  }
+  .f-input::placeholder { color: var(--header-text); opacity: .45; }
+  .f-input:focus { outline: none; border-color: var(--header-text); background: rgba(255,255,255,.18); }
+  .f-input.activo { background: rgba(255,255,255,.24); border-color: var(--header-text); }
+  .table-scroll.max-h thead tr.filter-row th { top: var(--head-h, 34px); }
+  .filter-count { display: none; margin-top: 8px; font-size: 12px; color: var(--text-secondary); align-items: center; gap: 12px; }
+  .filter-count.visible { display: flex; }
+  .filter-count button { font: inherit; color: var(--accent-text); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
+  .filter-count .vacio { color: var(--warning); }
+
+  .oculto { display: none; }
+
+  /* ---- Pedidos a confirmar (solapa Despachos) ---- */
+  .btn-flag {
+    display: inline-flex; align-items: center; gap: 8px; font: inherit; font-size: 12.5px; font-weight: 700;
+    cursor: pointer; padding: 7px 14px; border-radius: 20px; border: 1px solid var(--gridline);
+    background: var(--surface-1); color: var(--text-secondary); transition: background .15s, border-color .15s, color .15s;
+    white-space: nowrap;
+  }
+  .btn-flag:hover { border-color: var(--warning); color: var(--warning); }
+  .btn-flag .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--warning); flex-shrink: 0; }
+  .btn-flag.activo { background: color-mix(in srgb, var(--warning) 14%, var(--surface-1)); border-color: var(--warning); color: var(--warning); }
+
+  .panel-head-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-left: auto; }
+  .totales-chip {
+    display: inline-flex; align-items: baseline; gap: 6px;
+    font-family: var(--font-mono); font-size: 15px; font-weight: 700;
+    color: var(--accent-text); letter-spacing: -0.005em; white-space: nowrap;
+  }
+  .totales-chip:empty { display: none; }
+  .totales-chip b { font-weight: 700; color: var(--accent-text); }
+  .totales-chip .sep { color: var(--text-muted); font-weight: 400; font-size: 13px; }
+  .totales-chip.balanza { flex-wrap: wrap; justify-content: flex-end; row-gap: 2px; }
+  .totales-chip .lbl { font-family: var(--font-body); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); }
+  .totales-chip .ton { color: var(--text-secondary); font-weight: 600; font-size: 13px; }
+
+  /* ---- Ojo de calidad (solapa Despachos) ---- */
+  table.data-table th.col-ojo, table.data-table td.col-ojo { text-align: center; width: 52px; padding-left: 4px; padding-right: 4px; }
+  .btn-ojo {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; padding: 0;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: transparent; color: var(--text-secondary); cursor: pointer;
+    transition: color .15s ease, border-color .15s ease, background .15s ease;
+  }
+  .btn-ojo svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .btn-ojo:hover { color: var(--accent-text); border-color: var(--accent); background: var(--page-plane); }
+  .btn-ojo:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn-ojo[disabled] { opacity: .28; cursor: default; }
+
+  .modal-fondo { position: fixed; inset: 0; z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(20,24,16,.55); }
+  .modal-fondo.abierto { display: flex; }
+  .modal-caja { width: 100%; max-width: 480px; max-height: 86vh; overflow-y: auto; background: var(--surface-1); border-radius: 14px; box-shadow: var(--card-shadow-hover); }
+  .modal-caja.ancho { max-width: 920px; }
+  .modal-head {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--gridline); position: sticky; top: 0; z-index: 2;
+    background: var(--surface-1); border-top-left-radius: 14px; border-top-right-radius: 14px;
+  }
+  .modal-head h3 { margin: 0; font-family: var(--font-display); font-size: 17px; color: var(--text-primary); }
+  .modal-head .caption { margin-top: 3px; font-size: 12px; color: var(--text-muted); }
+  .modal-cerrar { flex: none; width: 28px; height: 28px; border: 0; border-radius: 8px; background: transparent; color: var(--text-muted); font-size: 20px; line-height: 1; cursor: pointer; }
+  .modal-cerrar:hover { background: var(--page-plane); color: var(--text-primary); }
+  .modal-cuerpo { padding: 16px 20px 20px; }
+  .calidad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .calidad-dato { padding: 12px 10px; border: 1px solid var(--gridline); border-radius: 10px; text-align: center; }
+  .calidad-dato .et { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); }
+  .calidad-dato .vl { margin-top: 5px; font-family: var(--font-mono); font-size: 19px; font-weight: 700; color: var(--text-primary); }
+  .calidad-dato .vl.vacio { color: var(--text-muted); font-weight: 400; }
+  .calidad-dato .un { font-size: 11px; color: var(--text-muted); margin-left: 2px; font-family: var(--font-body); font-weight: 400; }
+  .calidad-sub { margin: 14px 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); }
+  .calidad-meta { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+  .calidad-meta b { color: var(--text-primary); font-weight: 600; }
+  .calidad-aviso { padding: 14px; border-radius: 10px; background: var(--page-plane); font-size: 12.5px; color: var(--text-secondary); line-height: 1.6; }
+  @media (max-width: 520px) { .calidad-grid { grid-template-columns: 1fr; } }
+  .table-scroll table { border: none; }
+  .table-scroll td:first-child, .table-scroll th:first-child { padding-left: 14px; }
+  .table-scroll td:last-child, .table-scroll th:last-child { padding-right: 14px; }
+
+  .pill-tag {
+    display: inline-flex; align-items: center; justify-content: center; min-width: 26px; height: 20px; padding: 0 8px;
+    border-radius: 20px; background: var(--header-bg); color: var(--header-text); font-size: 10px; font-weight: 700;
+  }
+  .mini-bar { display: inline-flex; align-items: center; gap: 8px; min-width: 90px; }
+  .mini-bar .track { flex: 1; height: 6px; border-radius: 4px; background: var(--gridline); overflow: hidden; }
+  .mini-bar .fill { height: 100%; border-radius: 4px; background: var(--accent); }
+  .mini-bar .pct { font-size: 11.5px; font-weight: 700; color: var(--text-secondary); font-variant-numeric: tabular-nums; width: 34px; text-align: right; }
+
+  .hbar-list { display: flex; flex-direction: column; gap: 12px; }
+  .hbar-row { display: grid; grid-template-columns: 150px 1fr 64px; align-items: center; gap: 12px; }
+  .hbar-label { font-size: 12.5px; font-weight: 600; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hbar-track { height: 20px; border-radius: 5px; background: var(--gridline); overflow: hidden; }
+  .hbar-fill { height: 100%; border-radius: 5px; background: var(--header-bg); transition: width .7s ease; }
+  .hbar-value { font-size: 13px; font-weight: 700; color: var(--text-primary); text-align: right; font-variant-numeric: tabular-nums; }
+  @media (max-width: 720px) {
+    .hbar-row { grid-template-columns: 92px 1fr 54px; gap: 8px; }
+    .hbar-label { font-size: 11.5px; }
+  }
+
+  .status-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; padding: 3px 10px; border-radius: 20px; font-weight: 700; }
+  .status-badge.warn { color: var(--warning); background: color-mix(in srgb, var(--warning) 15%, var(--surface-1)); }
+  .status-badge.ok { color: var(--good-text); background: color-mix(in srgb, var(--good) 15%, var(--surface-1)); }
+  .status-badge.crit { color: var(--critical); background: color-mix(in srgb, var(--critical) 15%, var(--surface-1)); }
+  .status-badge.info { color: var(--series-4); background: color-mix(in srgb, var(--series-4) 15%, var(--surface-1)); }
+  .status-badge.done { color: var(--series-1); background: color-mix(in srgb, var(--series-1) 15%, var(--surface-1)); }
+  .status-badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+  .callout {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px 20px; margin: 0 24px 20px; flex-wrap: wrap; box-shadow: var(--card-shadow);
+  }
+  .callout.ok { background: color-mix(in srgb, var(--good) 8%, var(--surface-1)); }
+  .callout.crit { background: color-mix(in srgb, var(--critical) 8%, var(--surface-1)); }
+  /* ---- Vencidos y por vencer ---- */
+  #tablaLlamados td, #tablaVencidosLineas td { vertical-align: top; }
+  table.venc-table th, table.venc-table td { text-align: left; }
+  table.venc-table th.n, table.venc-table td.num { text-align: right; }
+  #tablaLlamados td.cli { font-weight: 700; }
+  #tablaLlamados td.cli .sub { display: block; font-weight: 400; font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+  #tablaLlamados td.wrap, #tablaVencidosLineas td.wrap { color: var(--text-secondary); }
+  #tablaLlamados .status-badge { white-space: normal; line-height: 1.3; }
+  /* Las dos tablas entran en el ancho del panel: columnas fijas y texto que
+     baja de renglón, en vez de scroll horizontal. */
+  table.venc-table { table-layout: fixed; width: 100%; }
+  table.venc-table th, table.venc-table td { white-space: normal; padding: 8px 6px; overflow-wrap: anywhere; }
+  table.venc-table thead th { font-size: 9.5px; letter-spacing: .03em; line-height: 1.25; }
+  table.venc-table td { font-size: 12px; }
+  table.venc-table td.num { font-size: 11.5px; }
+  .venc-table .f-input { min-width: 0; padding: 3px 4px; font-size: 10.5px; }
+  #tablaLlamados td.cli { min-width: 0; }
+  #tablaLlamados td.wrap, #tablaVencidosLineas td.wrap { min-width: 0; font-size: 11.5px; }
+  #tablaLlamados .status-badge { font-size: 11px; padding: 3px 8px; }
+  td .sub2 { display: block; font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  td.num.rojo { color: var(--critical); font-weight: 700; }
+  td.num.cero { color: var(--text-muted); }
+  .venc-bar { display: flex; height: 5px; border-radius: 3px; overflow: hidden; background: var(--gridline); margin: 5px 0 0 auto; }
+  .venc-bar span { display: block; height: 100%; }
+  .hbar-track.split { display: flex; }
+  .hbar-track.split .hbar-fill { border-radius: 0; }
+  .hbar-row.venc { grid-template-columns: 150px 1fr 110px 90px; }
+  .hbar-sub { display: block; font-size: 11px; font-weight: 600; color: var(--text-muted); }
+  @media (max-width: 720px) { .hbar-row.venc { grid-template-columns: 84px 1fr 70px 60px; } }
+  .callout .big { font-size: 14.5px; font-weight: 700; margin-bottom: 3px; }
+  .callout .desc { font-size: 12.5px; color: var(--text-secondary); max-width: 640px; }
+
+  .funnel { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+  @media (max-width: 860px) { .funnel { grid-template-columns: repeat(2,1fr); } }
+  .funnel-step {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px; padding: 18px 18px 16px;
+    box-shadow: var(--card-shadow); transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .funnel-step:hover { transform: translateY(-2px); box-shadow: var(--card-shadow-hover); }
+  .funnel-step.s1 { background: color-mix(in srgb, var(--series-3) 16%, var(--surface-1)); }
+  .funnel-step.s2 { background: color-mix(in srgb, var(--series-4) 14%, var(--surface-1)); }
+  .funnel-step.s3 { background: color-mix(in srgb, var(--series-1) 14%, var(--surface-1)); }
+  .funnel-step.s4 { background: color-mix(in srgb, var(--accent) 16%, var(--surface-1)); }
+  .funnel-step .fs-label { font-size: 10.5px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 9px; }
+  .funnel-step .fs-count { font-size: 27px; font-weight: 700; letter-spacing: -0.01em; }
+  .funnel-step .fs-kg { font-size: 12px; color: var(--text-secondary); margin-top: 5px; font-weight: 600; }
+
+  footer.mock-footer { margin: 34px 24px 0; padding: 16px 18px; border: 1px dashed var(--border); border-radius: 12px; font-size: 12px; color: var(--text-muted); text-align: center; }
+
+  .sheet-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .sheet-pill {
+    font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; padding: 7px 14px; border-radius: 20px;
+    border: 1px solid var(--border); background: var(--page-plane); color: var(--text-secondary);
+    display: flex; align-items: center; gap: 6px; transition: background .12s, color .12s, border-color .12s;
+  }
+  .sheet-pill:hover { color: var(--text-primary); border-color: var(--text-muted); }
+  .sheet-pill.active { background: var(--header-bg); border-color: var(--header-bg); color: var(--header-text); }
+  .sheet-pill .tag { font-size: 9.5px; opacity: .85; border: 1px solid currentColor; border-radius: 8px; padding: 1px 6px; font-weight: 600; }
+
+  .excel-scroll { max-height: 640px; overflow: auto; border: 1px solid var(--border); border-radius: 10px; }
+  table.excel-grid { border-collapse: collapse; font-size: 12px; background: var(--surface-1); }
+  table.excel-grid th, table.excel-grid td {
+    border: 1px solid var(--gridline); padding: 5px 10px; white-space: nowrap; text-align: left; font-variant-numeric: tabular-nums; font-family: var(--font-mono);
+  }
+  table.excel-grid thead th {
+    position: sticky; top: 0; z-index: 2; background: var(--page-plane); color: var(--text-primary);
+    font-weight: 700; text-align: center; min-width: 34px; font-family: var(--font-body);
+  }
+  table.excel-grid td.rownum, table.excel-grid th.rownum {
+    position: sticky; left: 0; z-index: 1; background: var(--page-plane); color: var(--text-primary);
+    font-weight: 700; text-align: center; min-width: 30px; font-family: var(--font-body);
+  }
+  table.excel-grid thead th.rownum { z-index: 3; }
+  .excel-empty { padding: 20px; color: var(--text-muted); font-size: 13px; }
+
+  /* ---- Cupos y Programación de Camiones/Carros ---- */
+  .cupos-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 0 24px 16px; flex-wrap: wrap; }
+  .cupos-semana-nav { display: flex; align-items: center; gap: 10px; }
+  .cupos-semana-nav button {
+    font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; width: 34px; height: 34px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--surface-1); color: var(--text-secondary); box-shadow: var(--card-shadow);
+  }
+  .cupos-semana-nav button:hover { color: var(--text-primary); border-color: var(--text-muted); }
+  .cupos-semana-nav .lbl { font-size: 14px; font-weight: 700; color: var(--text-primary); min-width: 190px; text-align: center; }
+  .cupos-semana-nav .lbl .hoy-link { display: block; font-size: 11px; font-weight: 600; color: var(--accent-text); cursor: pointer; margin-top: 2px; }
+
+  .btn-primary, .btn-secondary, .btn-danger {
+    font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; padding: 9px 16px; border-radius: 20px;
+    transition: background .15s, border-color .15s, color .15s, opacity .15s; white-space: nowrap;
+  }
+  .btn-primary { background: var(--accent); color: #fff; border: 1px solid var(--accent); }
+  .btn-primary:hover { opacity: .88; }
+  .btn-primary:disabled { opacity: .5; cursor: default; }
+  .btn-secondary { background: var(--surface-1); color: var(--text-secondary); border: 1px solid var(--border); }
+  .btn-secondary:hover { color: var(--text-primary); border-color: var(--text-muted); }
+  .btn-danger { background: var(--surface-1); color: var(--critical); border: 1px solid var(--critical); }
+  .btn-danger:hover { background: color-mix(in srgb, var(--critical) 12%, var(--surface-1)); }
+  .btn-mini { font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; padding: 4px 10px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface-1); color: var(--text-secondary); white-space: nowrap; }
+  .btn-mini:hover { color: var(--text-primary); border-color: var(--text-muted); }
+  .btn-mini.pri { color: var(--accent-text); border-color: var(--accent); }
+  .btn-mini.danger { color: var(--critical); border-color: var(--critical); }
+  .fila-acciones { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+
+  .dia-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; padding: 0 24px; margin-bottom: 22px; }
+  @media (max-width: 860px) { .dia-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .dia-grid { grid-template-columns: 1fr; } }
+  .dia-card {
+    cursor: pointer; background: var(--surface-1); border: 1px solid var(--border); border-radius: 16px;
+    padding: 16px 16px 14px; box-shadow: var(--card-shadow); transition: box-shadow .18s ease, transform .18s ease;
+    border-left: 4px solid var(--text-muted);
+  }
+  .dia-card:hover { box-shadow: var(--card-shadow-hover); transform: translateY(-2px); }
+  .dia-card[data-estado="verde"] { border-left-color: var(--good); }
+  .dia-card[data-estado="amarillo"] { border-left-color: var(--warning); }
+  .dia-card[data-estado="rojo"] { border-left-color: var(--critical); }
+  .dia-card[data-estado="gris"] { border-left-color: var(--text-muted); opacity: .78; }
+  .dia-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+  .dia-nombre { font-size: 14px; font-weight: 700; text-transform: capitalize; color: var(--text-primary); }
+  .dia-fecha { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
+  .dia-badge { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 12px; white-space: nowrap; }
+  .dia-badge.verde { color: var(--good-text); background: color-mix(in srgb, var(--good) 16%, var(--surface-1)); }
+  .dia-badge.amarillo { color: var(--warning); background: color-mix(in srgb, var(--warning) 16%, var(--surface-1)); }
+  .dia-badge.rojo { color: var(--critical); background: color-mix(in srgb, var(--critical) 16%, var(--surface-1)); }
+  .dia-badge.gris { color: var(--text-muted); background: var(--page-plane); }
+  .dia-modalidad { font-size: 11.5px; color: var(--text-secondary); margin-bottom: 8px; }
+  .dia-sin-modalidad { font-size: 12px; color: var(--text-muted); font-style: italic; padding: 10px 0; }
+  .dia-gauge { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 11.5px; }
+  .dia-gauge-label { width: 56px; flex-shrink: 0; color: var(--text-secondary); font-weight: 600; }
+  .dia-cargas-mini { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+  .dia-carga-chip { font-size: 11px; color: var(--text-secondary); padding: 4px 8px; border-radius: 8px; background: var(--page-plane); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dia-carga-mas { font-size: 10.5px; color: var(--text-muted); padding: 0 8px; }
+  .dia-vacio { font-size: 11.5px; color: var(--text-muted); padding: 4px 0; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-field { display: flex; flex-direction: column; gap: 5px; }
+  .form-field.full { grid-column: 1 / -1; }
+  .form-field label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); }
+  .form-field .ayuda { font-size: 11px; color: var(--text-muted); font-weight: 400; text-transform: none; letter-spacing: 0; margin-top: -2px; }
+  .input, select.input, textarea.input {
+    font: inherit; font-size: 13px; padding: 8px 11px; border: 1px solid var(--border); border-radius: 9px;
+    background: var(--surface-1); color: var(--text-primary); width: 100%; box-sizing: border-box;
+  }
+  .input:focus, select.input:focus, textarea.input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent); }
+  textarea.input { resize: vertical; min-height: 56px; font-family: inherit; }
+  .form-acciones { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+
+  .aviso-caja { padding: 12px 14px; border-radius: 10px; font-size: 12.5px; line-height: 1.55; margin-bottom: 14px; }
+  .aviso-caja.ok { background: color-mix(in srgb, var(--good) 12%, var(--surface-1)); color: var(--good-text); }
+  .aviso-caja.warn { background: color-mix(in srgb, var(--warning) 14%, var(--surface-1)); color: var(--text-primary); }
+  .aviso-caja.crit { background: color-mix(in srgb, var(--critical) 12%, var(--surface-1)); color: var(--critical); }
+  .aviso-caja ul { margin: 8px 0 0; padding-left: 18px; }
+
+  .modalidad-control { display: flex; align-items: center; gap: 10px; margin: 2px 0 18px; flex-wrap: wrap; }
+  .modalidad-control select.input { width: auto; min-width: 150px; }
+
+  .sheet-pills.cupos-filtro { padding: 0 0 2px; }
+</style>
+</head>
+<body>
+<div id="loadingOverlay" style="position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;background:var(--page-plane,#f4f5f7);">
+  <div class="loading-box" style="text-align:center;color:var(--text-muted,#666);font-family:inherit;">
+    <div style="font-size:15px;">Cargando datos de la campaña…</div>
+  </div>
+</div>
+<div class="wrap">
+
+  <div class="sticky-head">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo"><svg viewBox="0 0 24 24"><path d="M4 20c0-8 5-15 16-16-1 11-8 16-16 16Z"/><path d="M4 20c3-5 7-9 12-12"/></svg></div>
+        <div>
+          <div class="name">DS Hnos — Panel de Campaña</div>
+          <div class="sub">Soja 25/26 · <span id="lastUpdate">datos en vivo desde Supabase</span></div>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <span class="badge-note" id="userNombre"></span>
+        <button class="toggle" id="logoutBtn">Cerrar sesión</button>
+        <button class="toggle" id="themeToggle">Modo oscuro</button>
+      </div>
+    </header>
+
+    <nav class="tabs" id="tabs">
+      <button data-view="oferta" class="active">Oferta</button>
+      <button data-view="logistica">Despachos</button>
+      <button data-view="vencidos">Pedidos con fecha de entrega</button>
+      <button data-view="pedidos">Estado de pedidos</button>
+      <button data-view="comercial">Comercial</button>
+      <button data-view="produccion">Producción</button>
+      <button data-view="balanza">Balanza</button>
+      <button data-view="stock">Stock de empaque</button>
+      <button data-view="cupos">Cupos y Camiones</button>
+    </nav>
+  </div>
+
+  <!-- ===================== COMERCIAL ===================== -->
+  <section class="view" id="view-comercial">
+    <div class="area-head"><div class="eyebrow">ÁREA 04</div><h1>Comercial</h1><p>Ventas de la campaña — pedidos, clientes y evolución</p></div>
+    <div class="kpi-row" id="kpiVentas"></div>
+    <div class="callout ok" id="calloutChequeo"></div>
+
+    <div class="chart-row">
+      <div class="panel">
+        <div class="panel-head"><div><h2>Kg vendidos por variedad</h2><div class="caption">Campaña 25/26</div></div></div>
+        <div style="position:relative;">
+          <svg id="chartVariedad" viewBox="0 0 560 280" style="width:100%; height:auto; display:block;"></svg>
+          <div class="tooltip" id="ttVariedad"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div><h2>Kg vendidos por vendedor</h2><div class="caption">Campaña 25/26</div></div></div>
+        <div style="position:relative;">
+          <svg id="chartVendedor" viewBox="0 0 560 280" style="width:100%; height:auto; display:block;"></svg>
+          <div class="tooltip" id="ttVendedor"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h2>Evolución de ventas</h2><div class="caption">Kg vendidos por fecha de pedido</div></div></div>
+      <div style="position:relative;">
+        <svg id="chartTimeline" viewBox="0 0 1160 240" style="width:100%; height:auto; display:block;"></svg>
+        <div class="tooltip" id="ttTimeline"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h2>Detalle de pedidos</h2><div class="caption" id="captionVentasTabla"></div></div></div>
+      <div class="table-scroll max-h">
+        <table class="data-table wide-left">
+          <thead><tr><th>Pedido</th><th>Fecha</th><th>Cliente</th><th>Variedad</th><th>Cantidad</th><th>Presentación</th><th>Vendedor</th><th>Entrega</th><th>Kg</th></tr></thead>
+          <tbody id="tablaVentas"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== BALANZA ===================== -->
+  <section class="view" id="view-balanza">
+    <div class="area-head"><div class="eyebrow">ÁREA 06</div><h1>Balanza</h1><p>Ingreso de grano — camiones, campos de origen y merma</p></div>
+    <div class="kpi-row cols-4" id="kpiBalanza"></div>
+
+    <div class="chart-row">
+      <div class="panel">
+        <div class="panel-head"><div><h2>Kg ingresados por variedad</h2><div class="caption">Grano en balanza</div></div></div>
+        <div style="position:relative;">
+          <svg id="chartBalVariedad" viewBox="0 0 560 280" style="width:100%; height:auto; display:block;"></svg>
+          <div class="tooltip" id="ttBalVariedad"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div><h2>Kg ingresados por campo</h2><div class="caption">Origen de la mercadería</div></div></div>
+        <div style="position:relative;">
+          <svg id="chartBalCampo" viewBox="0 0 560 280" style="width:100%; height:auto; display:block;"></svg>
+          <div class="tooltip" id="ttBalCampo"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h2>Evolución de ingresos</h2><div class="caption">Kg netos por fecha</div></div></div>
+      <div style="position:relative;">
+        <svg id="chartBalTimeline" viewBox="0 0 1160 220" style="width:100%; height:auto; display:block;"></svg>
+        <div class="tooltip" id="ttBalTimeline"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div><h2>Detalle de camiones</h2><div class="caption" id="captionBalanzaTabla"></div></div>
+        <div class="panel-head-actions"><div class="totales-chip balanza" id="chipTotalesBalanza"></div></div>
+      </div>
+      <div class="table-scroll max-h">
+        <table class="data-table wide-left">
+          <thead><tr><th>Fecha</th><th>Chofer</th><th>Campo</th><th>Variedad</th><th>Categoría</th><th>Silo</th><th data-sum data-sum-suffix=" kg">Neto (kg)</th><th data-sum data-sum-suffix=" kg" data-sum-decimals="1">Merma (kg)</th></tr></thead>
+          <tbody id="tablaBalanza"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PRODUCCION ===================== -->
+  <section class="view" id="view-produccion">
+    <div class="area-head"><div class="eyebrow">ÁREA 05</div><h1>Producción</h1><p>Planta de procesamiento — rendimiento, calidad y plan de curado</p></div>
+    <div class="kpi-row cols-6" id="kpiProduccion"></div>
+
+    <div class="chart-row">
+      <div class="panel">
+        <div class="panel-head"><div><h2>Rendimiento promedio por variedad</h2><div class="caption">Kg/hora en planta</div></div></div>
+        <div style="position:relative;">
+          <svg id="chartRendVariedad" viewBox="0 0 560 260" style="width:100%; height:auto; display:block;"></svg>
+          <div class="tooltip" id="ttRendVariedad"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div><h2>Plan de curado — próximas semanas</h2><div class="caption">Kg netos a curar por semana de entrega</div></div></div>
+        <div style="position:relative;">
+          <svg id="chartCurado" viewBox="0 0 560 260" style="width:100%; height:auto; display:block;"></svg>
+          <div class="tooltip" id="ttCurado"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h2>Lotes procesados en planta</h2><div class="caption" id="captionLotesTabla"></div></div></div>
+      <div class="table-scroll max-h">
+        <table class="data-table wide-left">
+          <thead><tr><th>Lote final</th><th>Procedencia</th><th>Variedad</th><th>Kg</th><th>Kg/hr</th><th>Fin</th><th>Calidad</th><th>Parada</th></tr></thead>
+          <tbody id="tablaLotes"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h2>Plan de curado por variedad</h2><div class="caption">Pendiente vs. ya curado</div></div></div>
+      <div class="table-scroll">
+        <table class="data-table wide-left">
+          <thead><tr><th>Variedad</th><th>Tratamiento</th><th>Pendiente total (kg)</th><th>Ya curado (kg)</th><th>Neto a curar (kg)</th></tr></thead>
+          <tbody id="tablaCurado"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="kpi-row cols-3" id="kpiCurado"></div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h2>Curado — detalle por lote</h2><div class="caption">Hoja "Intermedio curado" — se va completando a medida que avanza esa etapa de la campaña</div></div></div>
+      <div class="table-scroll">
+        <table class="data-table wide-left">
+          <thead><tr><th>Lote intermedio</th><th>Lote final</th><th>Variedad</th><th>Tratamiento</th><th>Kg producidos</th><th>Kg/hs</th><th>Horas prod.</th><th>Área final</th></tr></thead>
+          <tbody id="tablaCuradoDetalle"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PEDIDOS (ESTADO / FUNNEL) ===================== -->
+  <section class="view" id="view-pedidos">
+    <div class="area-head"><div class="eyebrow">ÁREA 03</div><h1>Estado de pedidos</h1><p>Ventas → Producción → Despachos — mismo pedido, distinta etapa</p></div>
+    <div class="panel" style="margin-bottom:18px;">
+      <div class="panel-head"><div><h2>Recorrido de un pedido</h2><div class="caption">Cantidad de líneas y kg en cada etapa</div></div></div>
+      <div class="funnel" id="funnelEstados"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h2>Todas las líneas de pedido</h2><div class="caption" id="captionPedidosTabla"></div></div></div>
+      <div class="table-scroll max-h">
+        <table class="data-table wide-left">
+          <thead><tr><th>Pedido</th><th>Cliente</th><th>Variedad</th><th>Presentación</th><th>Kg</th><th>Lote final</th><th>Entrega</th><th>Estado</th></tr></thead>
+          <tbody id="tablaPedidos"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== LOGISTICA / DESPACHOS ===================== -->
+  <section class="view" id="view-logistica">
+    <div class="area-head"><div class="eyebrow">ÁREA 02</div><h1>Despachos</h1><p>Camiones que salen de planta con producto terminado</p></div>
+    <div class="kpi-row cols-4" id="kpiLogistica"></div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div><h2>Despachos registrados</h2><div class="caption">Hoja "Despacho" — se va completando a medida que avanza la campaña. Los indicadores solo cuentan pedidos con estado "Despachado"; los pedidos en planta, cargados o sin estado se muestran igual en la tabla pero no suman. Ordenados del más nuevo al más viejo. Los pedidos sin fecha confirmada están en "Pedidos a confirmar".</div></div>
+        <div class="panel-head-actions">
+          <div class="totales-chip" id="chipTotalesDespacho"></div>
+          <button type="button" class="btn-flag" id="btnPorConfirmar"><span class="dot"></span><span id="txtPorConfirmar">Pedidos a confirmar</span></button>
+        </div>
+      </div>
+      <div class="table-scroll max-h">
+        <table class="data-table wide-left">
+          <thead><tr><th>Pedido</th><th>Cliente</th><th>Día de carga</th><th>Variedad</th><th>Presentación</th><th data-sum data-sum-suffix=" kg">Kg</th><th data-sum data-sum-suffix=" bls" data-sum-decimals="1">Bolsas</th><th>Lote final</th><th>Estado</th><th class="col-ojo">Calidad</th></tr></thead>
+          <tbody id="tablaDespacho"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== VENCIDOS Y POR VENCER ===================== -->
+  <section class="view" id="view-vencidos">
+    <div class="area-head"><div class="eyebrow">SEGUIMIENTO DE ENTREGAS</div><h1>Pedidos con fecha de entrega</h1><p id="vencSubtitulo">Pedidos con fecha de entrega pasada o que vencen esta semana</p></div>
+    <div class="callout" id="calloutVencidos"></div>
+    <div class="kpi-row cols-4" id="kpiVencidos"></div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h2>Lista de llamados</h2><div class="caption">Un cliente por fila. Orden: vencido con carga lista en planta (más kilos listos primero), vencido sin carga lista, por vencer con carga lista, por vencer sin carga. La barra muestra cuánto de lo pendiente está listo.</div></div></div>
+      <div class="table-scroll max-h">
+        <table class="data-table venc-table">
+          <colgroup><col style="width:3.5%"><col style="width:21%"><col style="width:17%"><col style="width:13%"><col style="width:8.5%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:5.5%"><col style="width:7.5%"></colgroup>
+          <thead><tr><th>#</th><th>Cliente · pedidos · variedades</th><th>Acción</th><th>Programación</th><th class="n">Kg vencidos</th><th class="n">Kg por vencer</th><th class="n">Kg listos</th><th class="n">Sin producir</th><th class="n">Días atraso</th><th class="n">Próx. entrega</th></tr></thead>
+          <tbody id="tablaLlamados"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-head">
+          <div><h2>Kg vencidos por variedad</h2><div class="caption">Qué priorizar en producción · a la derecha, lo que vence en 7 días</div></div>
+          <div class="legend"><div class="item"><span class="swatch" style="background:var(--accent)"></span>Listo</div><div class="item"><span class="swatch" style="background:var(--series-3)"></span>Sin producir</div></div>
+        </div>
+        <div class="hbar-list" id="vencVariedades"></div>
+    </div>
+    <div class="panel">
+        <div class="panel-head">
+          <div><h2>Kg pendientes por fecha de entrega</h2><div class="caption" id="captionVencFechas">Todo lo que falta despachar</div></div>
+          <div class="legend"><div class="item"><span class="swatch" style="background:var(--accent)"></span>Listo</div><div class="item"><span class="swatch" style="background:var(--series-3)"></span>Sin producir</div></div>
+        </div>
+        <div style="position:relative;">
+          <svg id="chartVencFechas" viewBox="0 0 1160 280" style="width:100%; height:auto; display:block;"></svg>
+          <div class="tooltip" id="ttVencFechas"></div>
+        </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h2>Detalle por línea de pedido</h2><div class="caption" id="captionVencLineas"></div></div></div>
+      <div class="table-scroll max-h">
+        <table class="data-table venc-table">
+          <colgroup><col style="width:10%"><col style="width:22%"><col style="width:14%"><col style="width:7%"><col style="width:5%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:8%"></colgroup>
+          <thead><tr><th>Estado</th><th>Cliente · pedido</th><th>Variedad · envase</th><th class="n">Entrega</th><th class="n">Días</th><th class="n" data-sum data-sum-suffix=" kg">Kg pedido</th><th class="n" data-sum data-sum-suffix=" kg">Kg desp.</th><th class="n" data-sum data-sum-suffix=" kg">Kg pend.</th><th class="n" data-sum data-sum-suffix=" kg">Kg listos</th><th>Program.</th></tr></thead>
+          <tbody id="tablaVencidosLineas"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== STOCK ===================== -->
+  <section class="view" id="view-stock">
+    <div class="area-head"><div class="eyebrow">ÁREA 07</div><h1>Stock de empaque</h1><p>Big bags y bolsas disponibles para envasado</p></div>
+    <div class="kpi-row cols-2" id="kpiStock"></div>
+
+    <div class="chart-row">
+      <div class="panel">
+        <div class="panel-head">
+          <div><h2>Big bags por marca</h2><div class="caption">Estado del empaque disponible</div></div>
+          <div class="legend">
+            <span class="item"><span class="swatch" style="background:var(--series-1)"></span>Pintados</span>
+            <span class="item"><span class="swatch" style="background:var(--series-2)"></span>Sin pintar</span>
+            <span class="item"><span class="swatch" style="background:var(--series-3)"></span>Nuevos</span>
+          </div>
+        </div>
+        <div style="position:relative;">
+          <svg id="chartBigBags" viewBox="0 0 560 280" style="width:100%; height:auto; display:block;"></svg>
+          <div class="tooltip" id="ttBigBags"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div><h2>Bolsas por tipo de semilla</h2><div class="caption">Trigo vs. Soja</div></div></div>
+        <div style="position:relative;">
+          <svg id="chartBolsas" viewBox="0 0 420 280" style="width:100%; height:auto; display:block;"></svg>
+          <div class="tooltip" id="ttBolsas"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h2>Detalle de big bags por marca</h2></div></div>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead><tr><th>Marca</th><th>Pintados</th><th>Sin pintar</th><th>Nuevos</th><th>Total</th><th>% del total</th></tr></thead>
+          <tbody id="tablaStock"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== OFERTA ===================== -->
+  <section class="view active" id="view-oferta">
+    <div class="area-head"><div class="eyebrow">ÁREA 01</div><h1>Oferta</h1><p>Oferta, venta y disponible por variedad — en bolsas</p></div>
+    <div class="kpi-row" id="kpiOferta"></div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h2>Detalle por variedad</h2><div class="caption" id="captionOfertaTabla"></div></div></div>
+      <div class="table-scroll max-h">
+        <table class="data-table wide-left">
+          <thead><tr><th>Semillero</th><th>Variedad</th><th>Oferta</th><th>Venta</th><th>Disponible</th><th>% vendido</th></tr></thead>
+          <tbody id="tablaOferta"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h2>Ventas por variedad</h2><div class="caption">Bolsas vendidas</div></div></div>
+      <div class="hbar-list" id="chartOferta"></div>
+    </div>
+  </section>
+
+  <!-- ===================== CUPOS Y CAMIONES ===================== -->
+  <section class="view" id="view-cupos">
+    <div class="area-head"><div class="eyebrow">LOGÍSTICA</div><h1>Cupos y Programación de Camiones</h1><p>Planificación de cupos diarios de camiones y carros — lunes a sábado</p></div>
+
+    <div class="kpi-row cols-4" id="kpiCupos"></div>
+
+    <div class="cupos-toolbar">
+      <div class="cupos-semana-nav">
+        <button type="button" id="cuposSemanaPrev" aria-label="Semana anterior">‹</button>
+        <div class="lbl"><span id="cuposSemanaLabel">Semana del —</span><span class="hoy-link" id="cuposIrHoy">Ir a esta semana</span></div>
+        <button type="button" id="cuposSemanaNext" aria-label="Semana siguiente">›</button>
+      </div>
+      <button type="button" class="btn-primary" id="cuposBtnNuevaCarga">+ Nueva carga</button>
+    </div>
+
+    <div class="dia-grid" id="cuposDiaGrid"></div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div><h2>Cargas registradas</h2><div class="caption" id="cuposCaptionTabla">Cargando…</div></div>
+      </div>
+      <div class="sheet-pills cupos-filtro" id="cuposFiltroEstado">
+        <button type="button" class="sheet-pill active" data-estado="pendiente">Pendientes</button>
+        <button type="button" class="sheet-pill" data-estado="programado">Programadas</button>
+        <button type="button" class="sheet-pill" data-estado="despachado">Despachadas</button>
+        <button type="button" class="sheet-pill" data-estado="cancelado">Canceladas</button>
+      </div>
+      <div class="table-scroll max-h" style="margin-top:12px;">
+        <table class="data-table wide-left">
+          <thead><tr><th>Pedido</th><th>Cliente</th><th>Producto</th><th>Equipo</th><th>Patente</th><th>Fecha deseada</th><th>Fecha asignada</th><th>Creado por</th><th></th></tr></thead>
+          <tbody id="cuposTablaCargas"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h2>Actividad reciente</h2><div class="caption">Últimos movimientos — el más nuevo primero</div></div></div>
+      <div class="table-scroll max-h">
+        <table class="data-table wide-left">
+          <thead><tr><th>Fecha/hora</th><th>Pedido</th><th>Movimiento</th><th>De</th><th>A</th><th>Usuario</th><th>Detalle</th></tr></thead>
+          <tbody id="cuposTablaHistorial"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <footer class="mock-footer">
+    Datos en vivo desde Supabase — actualizados a medida que se cargan en planta.
+  </footer>
+</div>
+
+<!-- Ventana: nueva carga -->
+<div class="modal-fondo" id="modalCuposNueva" role="dialog" aria-modal="true" aria-labelledby="modalCuposNuevaTitulo">
+  <div class="modal-caja">
+    <div class="modal-head">
+      <div><h3 id="modalCuposNuevaTitulo">Nueva carga</h3><div class="caption">Queda "pendiente de programación" hasta asignarle una fecha</div></div>
+      <button class="modal-cerrar" id="modalCuposNuevaCerrar" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="modal-cuerpo">
+      <form id="formCuposNueva">
+        <div class="form-grid">
+          <div class="form-field"><label for="fcPedido">Nº de pedido / orden *</label><input class="input" id="fcPedido" name="pedido" required maxlength="60"></div>
+          <div class="form-field"><label for="fcTipo">Tipo de equipo *</label>
+            <select class="input" id="fcTipo" name="tipoEquipo" required>
+              <option value="camion">Camión</option>
+              <option value="carro">Carro</option>
+            </select>
+          </div>
+          <div class="form-field"><label for="fcCliente">Cliente</label><input class="input" id="fcCliente" name="cliente" maxlength="120"></div>
+          <div class="form-field"><label for="fcProducto">Producto / variedad</label><input class="input" id="fcProducto" name="producto" maxlength="120"></div>
+          <div class="form-field"><label for="fcPatente">Patente</label><input class="input" id="fcPatente" name="patente" maxlength="20"></div>
+          <div class="form-field"><label for="fcFecha">Fecha deseada</label><input class="input" type="date" id="fcFecha" name="fechaDeseada"></div>
+          <div class="form-field full"><label for="fcObs">Observaciones</label><textarea class="input" id="fcObs" name="observaciones" maxlength="500"></textarea></div>
+        </div>
+        <div id="formCuposNuevaError"></div>
+        <div class="form-acciones">
+          <button type="button" class="btn-secondary" id="formCuposNuevaCancelar">Cancelar</button>
+          <button type="submit" class="btn-primary">Guardar carga</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Ventana: detalle de un día (modalidad + cargas de ese día) -->
+<div class="modal-fondo" id="modalCuposDia" role="dialog" aria-modal="true" aria-labelledby="modalCuposDiaTitulo">
+  <div class="modal-caja ancho">
+    <div class="modal-head">
+      <div><h3 id="modalCuposDiaTitulo">Día</h3><div class="caption" id="modalCuposDiaSub"></div></div>
+      <button class="modal-cerrar" id="modalCuposDiaCerrar" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="modal-cuerpo" id="modalCuposDiaCuerpo"></div>
+  </div>
+</div>
+
+<!-- Ventana: proponer / confirmar asignación de fecha -->
+<div class="modal-fondo" id="modalCuposProponer" role="dialog" aria-modal="true" aria-labelledby="modalCuposProponerTitulo">
+  <div class="modal-caja">
+    <div class="modal-head">
+      <div><h3 id="modalCuposProponerTitulo">Programar carga</h3><div class="caption" id="modalCuposProponerSub"></div></div>
+      <button class="modal-cerrar" id="modalCuposProponerCerrar" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="modal-cuerpo" id="modalCuposProponerCuerpo"></div>
+  </div>
+</div>
+
+<!-- Ventana: historial de una carga -->
+<div class="modal-fondo" id="modalCuposHistCarga" role="dialog" aria-modal="true" aria-labelledby="modalCuposHistCargaTitulo">
+  <div class="modal-caja">
+    <div class="modal-head">
+      <div><h3 id="modalCuposHistCargaTitulo">Historial de la carga</h3><div class="caption" id="modalCuposHistCargaSub"></div></div>
+      <button class="modal-cerrar" id="modalCuposHistCargaCerrar" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="modal-cuerpo" id="modalCuposHistCargaCuerpo"></div>
+  </div>
+</div>
+
+<!-- Ventana de pedidos a confirmar (solapa Despachos) -->
+<div class="modal-fondo" id="modalPorConfirmar" role="dialog" aria-modal="true" aria-labelledby="modalPorConfirmarTitulo">
+  <div class="modal-caja ancho">
+    <div class="modal-head">
+      <div>
+        <h3 id="modalPorConfirmarTitulo">Pedidos a confirmar</h3>
+        <div class="caption">Todavía sin fecha de carga confirmada — el Excel los tiene como "A confirmar por el cliente". En cuanto se cargue una fecha real, pasan solos a la tabla principal.</div>
+      </div>
+      <button class="modal-cerrar" id="modalPorConfirmarCerrar" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="modal-cuerpo">
+      <div class="table-scroll max-h">
+        <table class="data-table wide-left">
+          <thead><tr><th>Pedido</th><th>Cliente</th><th>Día de carga</th><th>Variedad</th><th>Presentación</th><th>Kg</th><th>Bolsas</th><th>Lote final</th><th>Estado</th><th class="col-ojo">Calidad</th></tr></thead>
+          <tbody id="tablaDespachoPorConfirmar"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Ventana de calidad del lote (solapa Despachos) -->
+<div class="modal-fondo" id="modalCalidad" role="dialog" aria-modal="true" aria-labelledby="modalCalidadTitulo">
+  <div class="modal-caja">
+    <div class="modal-head">
+      <div>
+        <h3 id="modalCalidadTitulo">Calidad del lote</h3>
+        <div class="caption" id="modalCalidadSub"></div>
+      </div>
+      <button class="modal-cerrar" id="modalCalidadCerrar" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="modal-cuerpo" id="modalCalidadCuerpo"></div>
+  </div>
+</div>
+
+<script>
+let DATA = null;
+let DESPACHOS_POR_CONFIRMAR = [];
+</script>
+<script>
+
+</script>
+<script>
+// Minimal hand-drawn 24x24 stroke icon set for KPI icon-chips
+const ICONS = {
+  package: '<path d="M21 8l-9-5-9 5 9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/>',
+  'trending-up': '<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+  users: '<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 8.5a2.5 2.5 0 1 0-1-4.8"/><path d="M15 14c2.8.5 5 2.8 5 6"/>',
+  scale: '<path d="M12 3v18"/><path d="M5 7h14"/><path d="M5 7l-3 6a3 3 0 0 0 6 0Z"/><path d="M19 7l-3 6a3 3 0 0 0 6 0Z"/><path d="M8 21h8"/>',
+  truck: '<path d="M3 17V7a1 1 0 0 1 1-1h9v11"/><path d="M13 10h4l3 3v4h-7"/><circle cx="7" cy="18" r="1.8"/><circle cx="17" cy="18" r="1.8"/>',
+  layers: '<path d="M12 2l9 5-9 5-9-5 9-5Z"/><path d="M3 12l9 5 9-5"/>',
+  'map-pin': '<path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z"/><circle cx="12" cy="9" r="2.3"/>',
+  gauge: '<path d="M4 14a8 8 0 1 1 16 0"/><path d="M12 14l3.5-3.5"/><path d="M12 14v.01"/>',
+  'alert-triangle': '<path d="M12 3l10 18H2L12 3Z"/><path d="M12 9v5"/><path d="M12 17v.01"/>',
+  'check-circle': '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+  bag: '<path d="M4.4 5.6 q2.53 -3 5.07 0 q2.53 -3 5.07 0 q2.53 -3 5.06 0"/><path d="M4.4 5.6 H19.6"/><path d="M5.2 6.6 C4.3 11 3.9 15 3.9 17.6 C3.9 19.6 5 20.6 6.8 20.6 H17.2 C19 20.6 20.1 19.6 20.1 17.6 C20.1 15 19.7 11 18.8 6.6"/><path d="M5.2 6.6 H18.8"/><path d="M9 18.2 H15"/>',
+};
+
+const themeBtn = document.getElementById('themeToggle');
+const root = document.documentElement;
+themeBtn.addEventListener('click', () => {
+  const isDark = root.getAttribute('data-theme') === 'dark';
+  root.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  themeBtn.textContent = isDark ? 'Modo oscuro' : 'Modo claro';
+  renderAll();
+});
+
+document.getElementById('tabs').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-view]');
+  if (!btn) return;
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + btn.dataset.view).classList.add('active');
+  if (btn.dataset.view === 'cupos') cargarCupos();
+});
+
+// Los kg se muestran tambien como bolsas. Una bolsa son 40 kg, sea cual sea la
+// presentacion del despacho (un big bag de 800 kg equivale a 20 bolsas).
+const KG_POR_BOLSA = 40;
+
+// Excepcion: los despachos a granel no se expresan en bolsas — es grano suelto,
+// no semilla embolsada. Sus kg se muestran y se cuentan igual que siempre; lo
+// unico que no aplica es el equivalente en bolsas. Hoy el unico destino asi es
+// PUERTO; si aparece otro, se agrega a esta lista.
+const DESTINOS_A_GRANEL = ['PUERTO'];
+function esAGranel(d) {
+  return DESTINOS_A_GRANEL.includes(String(d && d.cliente || '').trim().toUpperCase());
+}
+
+// Fila de la tabla de Despacho — se usa tanto para la tabla principal como
+// para la ventana de "Pedidos a confirmar" (mismo formato de fila).
+function estadoBadgeDespacho(estado) {
+  if (estado === 'Despachado') return `<span class="status-badge ok">${estado}</span>`;
+  if (estado === 'Cargado' || estado === 'En Planta') return `<span class="status-badge info">${estado}</span>`;
+  return '<span class="status-badge warn">Sin estado</span>';
+}
+function filaDespacho(d) {
+  return `<tr>
+      <td>${d.pedido}</td><td title="${d.cliente}">${d.cliente}</td><td>${d.dia_carga || '—'}</td><td>${d.variedad}</td>
+      <td>${d.presentacion}</td><td class="num">${fmt(d.kg)}</td><td class="num">${(d.kg && !esAGranel(d)) ? fmt1(d.kg / KG_POR_BOLSA) : '—'}</td><td>${d.lote_final || '—'}</td>
+      <td>${estadoBadgeDespacho(d.estado)}</td>
+      <td class="col-ojo">${botonOjo(d.lote_final)}</td>
+    </tr>`;
+}
+
+function fmt(n) { return Math.round(n).toLocaleString('es-AR'); }
+function fmt1(n) { return n.toLocaleString('es-AR', { maximumFractionDigits: 1 }); }
+function pct(n) { return n.toLocaleString('es-AR', { maximumFractionDigits: 1 }) + '%'; }
+function formatNum(v, decimals) {
+  return decimals > 0
+    ? v.toLocaleString('es-AR', { maximumFractionDigits: decimals, minimumFractionDigits: decimals })
+    : Math.round(v).toLocaleString('es-AR');
+}
+
+function positionTooltip(tooltip, svg, e) {
+  const parentBounds = svg.parentElement.getBoundingClientRect();
+  tooltip.style.left = (e.clientX - parentBounds.left + 12) + 'px';
+  tooltip.style.top = (e.clientY - parentBounds.top - 36) + 'px';
+  tooltip.classList.add('show');
+}
+
+// A bar with rounded top corners, square baseline — the mark spec (4px cap, never fill the slot).
+function barPath(x, y, w, h, r) {
+  if (h <= 0) return '';
+  r = Math.max(0, Math.min(r, w / 2, h));
+  if (r === 0) return `M${x},${y+h} L${x},${y} L${x+w},${y} L${x+w},${y+h} Z`;
+  return `M${x},${y+h} L${x},${y+r} Q${x},${y} ${x+r},${y} L${x+w-r},${y} Q${x+w},${y} ${x+w},${y+r} L${x+w},${y+h} Z`;
+}
+
+function gradientDefs(svgId, colorVars) {
+  return '<defs>' + colorVars.map((v, si) =>
+    `<linearGradient id="grad-${svgId}-${si}" x1="0" y1="0" x2="0" y2="1">
+       <stop offset="0%" style="stop-color:var(${v});stop-opacity:1"/>
+       <stop offset="100%" style="stop-color:var(${v});stop-opacity:.68"/>
+     </linearGradient>`
+  ).join('') + '</defs>';
+}
+
+// Generic single/multi-series grouped or stacked bar chart
+function drawBarChart(svgId, ttId, categories, series, opts) {
+  opts = opts || {};
+  const svg = document.getElementById(svgId);
+  const tooltip = document.getElementById(ttId);
+  const vb = svg.viewBox.baseVal;
+  const W = vb.width, H = vb.height;
+  const padL = opts.padL || 70, padB = opts.padB || (opts.rotateLabels ? 78 : 50), padT = 10, padR = 10;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const maxVal = Math.max(1, ...categories.map((c,i) => series.reduce((s,ser) => opts.stacked ? s + (ser.values[i]||0) : Math.max(s, ser.values[i]||0), 0))) * 1.15;
+  const groupW = plotW / categories.length;
+  const barW = Math.min(opts.stacked ? groupW * 0.5 : groupW * 0.6 / series.length, 24);
+  const gap = 3;
+  const colorVars = opts.colorVars || (series.length === 1 ? [opts.colorVar || '--accent'] : ['--series-1','--series-2','--series-3','--series-4']);
+
+  let svgContent = gradientDefs(svgId, colorVars);
+  const steps = 4;
+  for (let i = 0; i <= steps; i++) {
+    const y = padT + plotH - (plotH * i / steps);
+    svgContent += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" class="gridline" />`;
+    svgContent += `<text x="${padL-8}" y="${y+3}" text-anchor="end" class="axis-label">${fmt(maxVal*i/steps)}</text>`;
+  }
+  svgContent += `<line x1="${padL}" y1="${padT+plotH}" x2="${W-padR}" y2="${padT+plotH}" class="baseline" />`;
+
+  let barIndex = 0;
+  categories.forEach((cat, i) => {
+    const gx = padL + i * groupW + groupW/2;
+    if (opts.stacked) {
+      let yCursor = padT + plotH;
+      series.forEach((ser, si) => {
+        const val = ser.values[i] || 0;
+        const h = (val / maxVal) * plotH;
+        const y = yCursor - h;
+        const isTop = si === series.length - 1;
+        const d = barPath(gx-barW/2, y, barW, Math.max(h,0), isTop ? 4 : 0);
+        const delay = (barIndex++ * 22) % 480;
+        svgContent += `<path class="bar" style="animation-delay:${delay}ms" data-cat="${cat}" data-key="${ser.name}" data-val="${val}" data-series="${si}" d="${d}" fill="url(#grad-${svgId}-${si})" />`;
+        yCursor -= h;
+      });
+    } else {
+      const totalW = barW * series.length + gap * (series.length-1);
+      series.forEach((ser, si) => {
+        const val = ser.values[i] || 0;
+        const h = Math.max((val / maxVal) * plotH, val > 0 ? 2 : 0);
+        const x = gx - totalW/2 + si*(barW+gap);
+        const y = padT + plotH - h;
+        const d = barPath(x, y, barW, h, 4);
+        const delay = (barIndex++ * 22) % 480;
+        svgContent += `<path class="bar" style="animation-delay:${delay}ms" data-cat="${cat}" data-key="${ser.name}" data-val="${val}" data-series="${si}" d="${d}" fill="url(#grad-${svgId}-${si})" />`;
+      });
+    }
+    const maxLen = opts.rotateLabels ? 22 : 12;
+    const label = String(cat).length > maxLen ? String(cat).slice(0,maxLen-1)+'…' : cat;
+    if (opts.rotateLabels) {
+      svgContent += `<text x="${gx}" y="${padT+plotH+14}" text-anchor="end" class="axis-label" transform="rotate(-40 ${gx} ${padT+plotH+14})">${label}</text>`;
+    } else {
+      svgContent += `<text x="${gx}" y="${padT+plotH+18}" text-anchor="middle" class="axis-label">${label}</text>`;
+    }
+  });
+
+  svg.innerHTML = svgContent;
+  svg.querySelectorAll('.bar').forEach(rect => {
+    rect.addEventListener('mousemove', (e) => {
+      const cat = rect.dataset.cat, key = rect.dataset.key, val = parseFloat(rect.dataset.val), si = rect.dataset.series;
+      tooltip.innerHTML = `<div class="t-title">${cat}</div><div class="t-row"><span class="dot" style="background:var(${colorVars[si]})"></span>${key}: ${fmt(val)}${opts.unit||''}</div>`;
+      positionTooltip(tooltip, svg, e);
+    });
+    rect.addEventListener('mouseleave', () => tooltip.classList.remove('show'));
+  });
+}
+
+// Catmull-Rom -> cubic Bezier smoothing for a natural, non-jagged curve
+function smoothPath(pts) {
+  if (pts.length < 3) return 'M' + pts.map(p => p.join(',')).join(' L');
+  let d = `M${pts[0][0]},${pts[0][1]}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i === 0 ? 0 : i - 1];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[i + 2] || p2;
+    const c1x = p1[0] + (p2[0] - p0[0]) / 6;
+    const c1y = p1[1] + (p2[1] - p0[1]) / 6;
+    const c2x = p2[0] - (p3[0] - p1[0]) / 6;
+    const c2y = p2[1] - (p3[1] - p1[1]) / 6;
+    d += ` C${c1x},${c1y} ${c2x},${c2y} ${p2[0]},${p2[1]}`;
+  }
+  return d;
+}
+
+function drawLineChart(svgId, ttId, points, opts) {
+  opts = opts || {};
+  const colorVar = opts.colorVar || '--accent';
+  const svg = document.getElementById(svgId);
+  const tooltip = document.getElementById(ttId);
+  const vb = svg.viewBox.baseVal;
+  const W = vb.width, H = vb.height;
+  const padL = 70, padB = 40, padT = 14, padR = 20;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const maxVal = Math.max(1, ...points.map(p=>p.v)) * 1.15;
+  const stepX = points.length > 1 ? plotW / (points.length - 1) : 0;
+
+  let svgContent = `<defs>
+    <linearGradient id="areaGrad-${svgId}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" style="stop-color:var(${colorVar});stop-opacity:.32"/>
+      <stop offset="100%" style="stop-color:var(${colorVar});stop-opacity:0"/>
+    </linearGradient>
+  </defs>`;
+  const steps = 4;
+  for (let i = 0; i <= steps; i++) {
+    const y = padT + plotH - (plotH * i / steps);
+    svgContent += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" class="gridline" />`;
+    svgContent += `<text x="${padL-8}" y="${y+3}" text-anchor="end" class="axis-label">${fmt(maxVal*i/steps)}</text>`;
+  }
+  svgContent += `<line x1="${padL}" y1="${padT+plotH}" x2="${W-padR}" y2="${padT+plotH}" class="baseline" />`;
+
+  const pts = points.map((p,i) => [padL + i*stepX, padT + plotH - (p.v/maxVal)*plotH]);
+  const curve = smoothPath(pts);
+  const areaPath = `M${pts[0][0]},${padT+plotH} ` + curve.slice(curve.indexOf(' ')+1) + ` L${pts[pts.length-1][0]},${padT+plotH} Z`;
+  svgContent += `<path class="area-fill" d="${areaPath}" fill="url(#areaGrad-${svgId})" />`;
+  svgContent += `<path class="line-path" pathLength="100" d="${curve}" fill="none" stroke="var(${colorVar})" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />`;
+  const skip = Math.max(1, Math.ceil(points.length / 16));
+  pts.forEach((p,i) => {
+    const delay = 900 + i * 18;
+    svgContent += `<circle class="bar dot-marker" style="animation-delay:${delay}ms" data-m="${points[i].label}" data-v="${points[i].v}" cx="${p[0]}" cy="${p[1]}" r="4.5" fill="var(${colorVar})" stroke="var(--surface-1)" stroke-width="2" />`;
+    if (i % skip === 0 || i === pts.length-1) {
+      svgContent += `<text x="${p[0]}" y="${padT+plotH+18}" text-anchor="middle" class="axis-label">${points[i].label}</text>`;
+    }
+  });
+  svg.innerHTML = svgContent;
+  svg.querySelectorAll('circle').forEach(c => {
+    c.addEventListener('mousemove', (e) => {
+      tooltip.innerHTML = `<div class="t-title">${c.dataset.m}</div><div class="t-row"><span class="dot" style="background:var(${colorVar})"></span>${fmt(c.dataset.v)} kg</div>`;
+      positionTooltip(tooltip, svg, e);
+    });
+    c.addEventListener('mouseleave', () => tooltip.classList.remove('show'));
+  });
+}
+
+// Small inline sparkline (trend, no axes) for a KPI card
+function sparklineSvg(values) {
+  if (!values || values.length < 2) return '';
+  const w = 100, h = 26;
+  const max = Math.max(...values), min = Math.min(...values, 0);
+  const range = (max - min) || 1;
+  const stepX = w / (values.length - 1);
+  const pts = values.map((v,i) => [i*stepX, h - ((v-min)/range)*h*0.86 - 2]);
+  const linePath = smoothPath(pts);
+  const areaPath = `M${pts[0][0]},${h} ` + linePath.slice(linePath.indexOf(' ')+1) + ` L${pts[pts.length-1][0]},${h} Z`;
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <path class="spark-fill" d="${areaPath}"></path>
+    <path class="spark-line" pathLength="100" d="${linePath}"></path>
+  </svg>`;
+}
+
+// KPI card with animated count-up value and an optional inline trend sparkline
+function kpiCard(label, value, opts) {
+  if (typeof opts === 'string') opts = { note: opts };
+  opts = opts || {};
+  const isNum = typeof value === 'number';
+  const decimals = opts.decimals || 0;
+  const valueHtml = isNum
+    ? `<span class="value-num" data-target="${value}" data-decimals="${decimals}">0</span>${opts.unit ? `<span class="unit">${opts.unit}</span>` : ''}`
+    : `${value}${opts.unit ? `<span class="unit">${opts.unit}</span>` : ''}`;
+  const sparkHtml = sparklineSvg(opts.spark);
+  const iconSvg = ICONS[opts.icon] || ICONS.package;
+  return `<div class="kpi">
+    <div class="icon-chip"><svg viewBox="0 0 24 24">${iconSvg}</svg></div>
+    <div class="label">${label}</div>
+    <div class="value">${valueHtml}</div>
+    ${opts.note ? `<div class="note">${opts.note}</div>` : ''}
+    ${sparkHtml}
+  </div>`;
+}
+
+// Animate every not-yet-animated .value-num in view (easeOutExpo count-up)
+function animateCountUp() {
+  document.querySelectorAll('.value-num[data-target]').forEach(el => {
+    const target = parseFloat(el.dataset.target);
+    const decimals = parseInt(el.dataset.decimals, 10) || 0;
+    if (!isFinite(target)) { el.textContent = el.dataset.target; return; }
+    const dur = 900;
+    const t0 = performance.now();
+    function tick(now) {
+      const p = Math.min(1, (now - t0) / dur);
+      const eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = formatNum(target * eased, decimals);
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  });
+}
+
+const ESTADO_ORDER = ['4- Procesar', '3- En Proceso', '2- Terminado', '1- Despachado'];
+const ESTADO_LABELS = { '4- Procesar':'Por procesar', '3- En Proceso':'En proceso', '2- Terminado':'Terminado', '1- Despachado':'Despachado' };
+const ESTADO_CLASS = { '4- Procesar':'s1', '3- En Proceso':'s2', '2- Terminado':'s3', '1- Despachado':'s4' };
+// Mismos colores que el funnel de arriba (s1=warn, s2=info, s3=done, s4=ok) para que la
+// referencia de "Recorrido de un pedido" coincida con el color de cada fila de la tabla.
+const ESTADO_BADGE = { '4- Procesar':'warn', '3- En Proceso':'info', '2- Terminado':'done', '1- Despachado':'ok' };
+
+function renderAll() {
+  // ================= COMERCIAL =================
+  document.getElementById('kpiVentas').innerHTML = [
+    kpiCard('Total vendido', DATA.kpi_ventas.total_kg, {unit:' kg', spark: Object.values(DATA.por_fecha), icon:'trending-up'}),
+    kpiCard('Pedidos', DATA.kpi_ventas.pedidos, {icon:'layers'}),
+    kpiCard('Clientes', DATA.kpi_ventas.clientes, {icon:'users'}),
+  ].join('');
+  document.getElementById('calloutChequeo').innerHTML = `
+    <div><div class="big">Datos en vivo</div><div class="desc">Conectado directo a la base de datos — cada carga en planta se refleja acá sin pasos intermedios.</div></div>
+    <span class="status-badge ok">Al día</span>`;
+
+  const variedades = Object.keys(DATA.por_variedad);
+  drawBarChart('chartVariedad', 'ttVariedad', variedades, [{name:'Kg', values: variedades.map(v=>DATA.por_variedad[v])}], {unit:' kg', rotateLabels:true});
+  const vendedores = Object.keys(DATA.por_vendedor);
+  drawBarChart('chartVendedor', 'ttVendedor', vendedores, [{name:'Kg', values: vendedores.map(v=>DATA.por_vendedor[v])}], {unit:' kg', rotateLabels:true});
+  const fechas = Object.keys(DATA.por_fecha);
+  drawLineChart('chartTimeline', 'ttTimeline', fechas.map(f => ({label: f.slice(5), v: DATA.por_fecha[f]})));
+
+  document.getElementById('captionVentasTabla').textContent = DATA.ventas.length + ' líneas de venta';
+  document.getElementById('tablaVentas').innerHTML = DATA.ventas
+    .slice().sort((a,b)=> a.fecha.localeCompare(b.fecha))
+    .map(v => `<tr>
+      <td>${v.vta_id}</td><td>${v.fecha}</td><td>${v.cliente}</td><td>${v.variedad}</td>
+      <td class="num">${fmt1(v.cantidad)}</td><td>${v.pack}</td><td>${v.vendedor}</td>
+      <td>${v.fecha_entrega || '—'}</td><td class="num">${fmt(v.kg_total)}</td>
+    </tr>`).join('');
+
+  // ================= BALANZA =================
+  document.getElementById('kpiBalanza').innerHTML = [
+    kpiCard('Grano ingresado', DATA.kpi_balanza.total_neto, {unit:' kg', spark: Object.values(DATA.bal_por_fecha), icon:'scale'}),
+    kpiCard('Camiones', DATA.kpi_balanza.camiones, {icon:'truck'}),
+    kpiCard('Campos de origen', DATA.kpi_balanza.campos, {icon:'map-pin'}),
+    kpiCard('Merma promedio', DATA.kpi_balanza.merma_prom_pct, {unit:'%', decimals:1, note:'sobre el neto ingresado', icon:'gauge'}),
+  ].join('');
+  const balVar = Object.keys(DATA.bal_por_variedad);
+  drawBarChart('chartBalVariedad', 'ttBalVariedad', balVar, [{name:'Kg', values: balVar.map(v=>DATA.bal_por_variedad[v])}], {unit:' kg', rotateLabels:true});
+  const balCampo = Object.keys(DATA.bal_por_campo);
+  drawBarChart('chartBalCampo', 'ttBalCampo', balCampo, [{name:'Kg', values: balCampo.map(v=>DATA.bal_por_campo[v])}], {unit:' kg', rotateLabels:true});
+  const balFechas = Object.keys(DATA.bal_por_fecha);
+  drawLineChart('chartBalTimeline', 'ttBalTimeline', balFechas.map(f => ({label: f.slice(5), v: DATA.bal_por_fecha[f]})));
+
+  document.getElementById('captionBalanzaTabla').textContent = DATA.balanza.length + ' camiones registrados';
+  document.getElementById('tablaBalanza').innerHTML = DATA.balanza
+    .slice().sort((a,b)=> a.fecha.localeCompare(b.fecha))
+    .map(b => `<tr>
+      <td>${b.fecha}</td><td>${b.chofer}</td><td>${b.campo}</td><td>${b.variedad}</td>
+      <td>${b.categoria}</td><td>${b.silo}</td><td class="num">${fmt(b.neto)}</td><td class="num">${fmt1(b.merma + b.merma_viento)}</td>
+    </tr>`).join('');
+
+  // Contador de la tabla de camiones: siempre visible. Sin filtros suma toda
+  // la tabla; al filtrar (por fecha, campo, variedad, silo...) suma solo los
+  // camiones que quedan a la vista. El neto va también en toneladas.
+  document.getElementById('tablaBalanza').closest('table')._onSumas = (sumas, sumCols, visibles, total, activos) => {
+    const chip = document.getElementById('chipTotalesBalanza');
+    if (!chip) return;
+    const neto = sumas[0] || 0, merma = sumas[1] || 0;
+    const ton = (neto / 1000).toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    chip.innerHTML =
+      `<span class="lbl">${activos ? 'Filtrado · ' + visibles + ' de ' + total + ' camiones' : 'Total · ' + total + ' camiones'}</span>` +
+      ` <span class="sep">·</span> Neto <b>${formatSuma(neto, 0)} kg</b> <span class="ton">(${ton} t)</span>` +
+      ` <span class="sep">·</span> Merma <b>${formatSuma(merma, 1)} kg</b>`;
+  };
+
+  // ================= PRODUCCION =================
+  const okCal = DATA.calidad_counts['Si'] || 0;
+  document.getElementById('kpiProduccion').innerHTML = [
+    kpiCard('Procesado en planta', DATA.kpi_planta.kg_procesado, {unit:' kg', icon:'package'}),
+    kpiCard('Rendimiento prom.', DATA.kpi_planta.rendimiento_prom, {unit:' kg/hr', icon:'trending-up'}),
+    kpiCard('Lotes procesados', DATA.kpi_planta.lotes, {icon:'layers'}),
+    kpiCard('Paradas registradas', DATA.kpi_planta.paradas, {icon:'alert-triangle'}),
+    kpiCard('Calidad OK', okCal + ' / ' + DATA.kpi_planta.lotes, {note:'lotes aprobados en laboratorio', icon:'check-circle'}),
+    kpiCard('Horas de planta', DATA.calendario_total_gessi + DATA.calendario_total_blomar, {unit:' hs', note:'Gessi + Blomar, campaña completa', icon:'clock'}),
+  ].join('');
+  const rendVar = Object.keys(DATA.int_rendimiento_var);
+  drawBarChart('chartRendVariedad', 'ttRendVariedad', rendVar, [{name:'Kg/hr', values: rendVar.map(v=>Math.round(DATA.int_rendimiento_var[v]))}], {unit:' kg/hr', rotateLabels:true});
+  const curadoWeeks = DATA.plan_curado_weekly.filter(w => w.semana !== 'Sin fecha');
+  drawBarChart('chartCurado', 'ttCurado', curadoWeeks.map(w=>w.semana.slice(5)), [{name:'Kg a curar', values: curadoWeeks.map(w=>w.kg)}], {unit:' kg'});
+
+  document.getElementById('captionLotesTabla').textContent = DATA.lotes.length + ' lotes procesados';
+  document.getElementById('tablaLotes').innerHTML = DATA.lotes.map(l => {
+    const calMap = {'Si':'<span class="status-badge ok">OK</span>','REPROCESAR':'<span class="status-badge crit">Reprocesar</span>','CURADO':'<span class="status-badge info">Curado</span>'};
+    const cal = calMap[l.pureza] || '<span class="status-badge warn">Pendiente</span>';
+    return `<tr>
+      <td>${l.lote}</td><td>${l.procedencia}</td><td>${l.variedad}</td>
+      <td class="num">${fmt(l.kg)}</td><td class="num">${fmt(l.kg_hr)}</td><td>${l.fin || '—'}</td>
+      <td>${cal}</td>
+      <td>${l.paro ? `<span class="status-badge warn">${l.detalle_paro || l.paro}</span>` : `<span class="status-badge ok">Sin novedad</span>`}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('tablaCurado').innerHTML = DATA.plan_curado.map(p => `<tr>
+      <td>${p.variedad}</td><td>${p.tratamiento}</td>
+      <td class="num">${fmt(p.pendiente_total)}</td><td class="num">${fmt(p.curado_disp)}</td><td class="num">${fmt(p.neto_a_curar)}</td>
+    </tr>`).join('');
+
+  document.getElementById('kpiCurado').innerHTML = [
+    kpiCard('Lotes curados', DATA.kpi_curado.lotes, {icon:'layers'}),
+    kpiCard('Kg producidos', DATA.kpi_curado.kg_producidos, {unit:' kg', icon:'package'}),
+    kpiCard('Rendimiento prom.', DATA.kpi_curado.rendimiento_prom, {unit:' kg/hs', icon:'trending-up'}),
+  ].join('');
+  document.getElementById('tablaCuradoDetalle').innerHTML = DATA.lotes_curado.map(l => `<tr>
+      <td>${l.lote_intermedio || '—'}</td><td>${l.lote_final || '—'}</td><td>${l.variedad || '—'}</td>
+      <td>${l.tratamiento || '—'}</td><td class="num">${fmt(l.kg_producidos || 0)}</td>
+      <td class="num">${fmt(l.kg_hs || 0)}</td><td class="num">${fmt(l.horas_prod || 0)}</td><td>${l.area_final || '—'}</td>
+    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);">Todavía no arrancó la etapa de curado esta campaña</td></tr>';
+
+  // ================= PEDIDOS (FUNNEL) =================
+  const funnelHtml = ESTADO_ORDER.map(est => {
+    const d = DATA.estados_pedidos[est] || {count:0, kg:0};
+    return `<div class="funnel-step ${ESTADO_CLASS[est]}">
+      <div class="fs-label">${ESTADO_LABELS[est]}</div>
+      <div class="fs-count">${d.count}</div>
+      <div class="fs-kg">${fmt(d.kg)} kg</div>
+    </div>`;
+  }).join('');
+  document.getElementById('funnelEstados').innerHTML = funnelHtml;
+
+  document.getElementById('captionPedidosTabla').textContent = DATA.prodfinal.length + ' líneas en producción/fulfillment';
+  document.getElementById('tablaPedidos').innerHTML = DATA.prodfinal.map(p => {
+    const badge = ESTADO_LABELS[p.estado] ? `<span class="status-badge ${ESTADO_BADGE[p.estado]}">${ESTADO_LABELS[p.estado]}</span>` : (p.estado || '—');
+    return `<tr>
+      <td>${p.venta || p.vta_id}</td><td>${p.cliente}</td><td>${p.variedad}</td><td>${p.presentacion}</td>
+      <td class="num">${fmt(p.kg)}</td><td>${p.lote_final || '—'}</td><td>${p.fecha_entrega || '—'}</td><td>${badge}</td>
+    </tr>`;
+  }).join('');
+
+  // ================= LOGISTICA =================
+  const despachados = DATA.despachos.filter(d => d.estado === 'Despachado');
+  const kgDespachado = despachados.reduce((s,d)=>s+d.kg,0);
+  const aGranel = despachados.filter(esAGranel);
+  const kgEmbolsado = despachados.filter(d => !esAGranel(d)).reduce((s,d)=>s+d.kg,0);
+  const bolsasDespachadas = kgEmbolsado / KG_POR_BOLSA;
+  // % de lo vendido (hoja Oferta, "Venta total" en bolsas) que ya salió de
+  // planta: bolsas despachadas (sin contar a granel, igual que la tarjeta
+  // "Bolsas despachadas") sobre DATA.kpi_oferta.total_venta.
+  const pctDespachadoVenta = DATA.kpi_oferta.total_venta
+    ? (bolsasDespachadas / DATA.kpi_oferta.total_venta) * 100 : 0;
+  // Camiones realmente despachados: 1 camión = la cantidad de filas del
+  // mismo día de carga que comparten el mismo número en la columna
+  // "Camión" (hoja Despacho, agregada el 08/10). Una línea sin número de
+  // camión cargado cuenta como su propio camión (nunca se agrupa con otra
+  // solo por compartir el día, porque en los datos reales eso junta
+  // camiones distintos que no hay forma de diferenciar sin el dato).
+  const claveCamion = (d) => d.dia_carga_fecha + '|' + (
+    (d.camion !== null && d.camion !== undefined && d.camion !== '') ? d.camion : ('sin-camion-' + d.pedido)
+  );
+  const camionesDespachados = new Set(despachados.map(claveCamion)).size;
+  document.getElementById('kpiLogistica').innerHTML = [
+    kpiCard('Porcentaje de despacho', pctDespachadoVenta, {unit:'%', decimals:1,
+      note:'sobre el total de ventas confirmadas', icon:'layers'}),
+    kpiCard('Camiones despachados', camionesDespachados, {icon:'truck'}),
+    kpiCard('Kg despachados', kgDespachado, {unit:' kg', icon:'package'}),
+    kpiCard('Bolsas despachadas', Math.round(bolsasDespachadas), {unit:' bls',
+      note: 'equivalente en bolsas de ' + KG_POR_BOLSA + ' kg' +
+            (aGranel.length ? ' · no incluye ' + aGranel.length + (aGranel.length === 1 ? ' despacho a granel' : ' despachos a granel') : ''),
+      icon:'bag'}),
+  ].join('');
+  // Pedidos con fecha de carga real van a la tabla principal, del más nuevo
+  // al más viejo. Los que todavía no tienen fecha confirmada ("A confirmar
+  // por el cliente", o cualquier otro texto sin fecha real) se muestran en
+  // la ventana de "Pedidos a confirmar".
+  const despachosConFecha = DATA.despachos.filter(d => d.dia_carga_fecha);
+  DESPACHOS_POR_CONFIRMAR = DATA.despachos.filter(d => !d.dia_carga_fecha);
+  despachosConFecha.sort((a, b) => b.dia_carga_fecha.localeCompare(a.dia_carga_fecha) || String(a.pedido).localeCompare(String(b.pedido)));
+
+  const tablaDespachoEl = document.getElementById('tablaDespacho');
+  tablaDespachoEl.innerHTML = despachosConFecha.map(filaDespacho).join('')
+    || '<tr><td colspan="10" style="text-align:center;color:var(--text-muted);">Sin despachos registrados todavía</td></tr>';
+  document.getElementById('tablaDespachoPorConfirmar').innerHTML = DESPACHOS_POR_CONFIRMAR.map(filaDespacho).join('')
+    || '<tr><td colspan="10" style="text-align:center;color:var(--text-muted);">No hay pedidos esperando fecha</td></tr>';
+
+  // Chip de totales en la cabecera del panel: recalcula solo (via _onSumas,
+  // ver aplicarFiltro) con las filas que van quedando visibles a medida que
+  // se filtra la tabla. Sin ningún filtro activo se deja vacío (se oculta
+  // por CSS) para no confundirlo con las tarjetas de arriba, que suman con
+  // otro criterio (solo "Despachado").
+  tablaDespachoEl.closest('table')._onSumas = (sumas, sumCols, visibles, total, activos) => {
+    const chip = document.getElementById('chipTotalesDespacho');
+    if (!chip) return;
+    if (!activos) { chip.innerHTML = ''; return; }
+    chip.innerHTML = sumCols.map(
+      (c, i) => '<b>' + formatSuma(sumas[i], c.decimales) + c.sufijo + '</b>'
+    ).join(' <span class="sep">·</span> ');
+  };
+
+  const btnPorConfirmar = document.getElementById('btnPorConfirmar');
+  document.getElementById('txtPorConfirmar').textContent = 'Pedidos a confirmar (' + DESPACHOS_POR_CONFIRMAR.length + ')';
+  btnPorConfirmar.style.display = DESPACHOS_POR_CONFIRMAR.length ? '' : 'none';
+  if (!btnPorConfirmar._listo) {
+    btnPorConfirmar.addEventListener('click', () => abrirPorConfirmar());
+    btnPorConfirmar._listo = true;
+  }
+
+  // ================= STOCK =================
+  const totalBolsas = DATA.bolsas_by_semilla.Trigo + DATA.bolsas_by_semilla.Soja;
+  const totalBB = DATA.resumen_marca.reduce((s,m)=>s+m.pintados+m.sin_pintar+m.nuevos,0);
+  document.getElementById('kpiStock').innerHTML = [
+    kpiCard('Bolsas totales', totalBolsas, {note: fmt(DATA.bolsas_by_semilla.Trigo) + ' trigo · ' + fmt(DATA.bolsas_by_semilla.Soja) + ' soja', icon:'package'}),
+    kpiCard('Big bags totales', totalBB, {icon:'layers'}),
+  ].join('');
+  const marcas = DATA.resumen_marca.map(m=>m.marca);
+  drawBarChart('chartBigBags', 'ttBigBags', marcas, [
+    {name:'Pintados', values: DATA.resumen_marca.map(m=>m.pintados)},
+    {name:'Sin pintar', values: DATA.resumen_marca.map(m=>m.sin_pintar)},
+    {name:'Nuevos', values: DATA.resumen_marca.map(m=>m.nuevos)},
+  ], {stacked:true, rotateLabels:true});
+  drawBarChart('chartBolsas', 'ttBolsas', ['Trigo','Soja'], [{name:'Bolsas', values:[DATA.bolsas_by_semilla.Trigo, DATA.bolsas_by_semilla.Soja]}]);
+  document.getElementById('tablaStock').innerHTML = DATA.resumen_marca.map(m => {
+    const total = m.pintados + m.sin_pintar + m.nuevos;
+    const share = totalBB > 0 ? (total / totalBB) * 100 : 0;
+    return `<tr>
+      <td>${m.marca}</td><td class="num">${fmt(m.pintados)}</td><td class="num">${fmt(m.sin_pintar)}</td>
+      <td class="num">${fmt(m.nuevos)}</td><td class="num">${fmt(total)}</td>
+      <td class="num"><div class="mini-bar"><div class="track"><div class="fill" style="width:${share.toFixed(1)}%"></div></div><span class="pct">${fmt1(share)}%</span></div></td>
+    </tr>`;
+  }).join('');
+
+  // ================= OFERTA =================
+  const pctDisponibleOferta = DATA.kpi_oferta.total_oferta
+    ? (DATA.kpi_oferta.total_disponible / DATA.kpi_oferta.total_oferta) * 100 : 0;
+  document.getElementById('kpiOferta').innerHTML = [
+    kpiCard('Oferta total', DATA.kpi_oferta.total_oferta, {unit:' Bls', note: 'repartidas en ' + DATA.kpi_oferta.variedades + ' variedades', icon:'package'}),
+    kpiCard('Venta total', DATA.kpi_oferta.total_venta, {unit:' Bls', note: fmt1(DATA.kpi_oferta.pct_vendido) + '% de la oferta vendida', icon:'trending-up'}),
+    kpiCard('Disponible', DATA.kpi_oferta.total_disponible, {unit:' Bls', note: fmt1(pctDisponibleOferta) + '% de la oferta aún disponible', icon:'layers'}),
+  ].join('');
+
+  const ofertaOrdenada = DATA.oferta.slice().sort((a,b) => b.venta - a.venta);
+  const maxVentaOferta = Math.max(1, ...ofertaOrdenada.map(o => o.venta));
+  document.getElementById('chartOferta').innerHTML = ofertaOrdenada.map(o => {
+    const width = Math.max(0, (o.venta / maxVentaOferta) * 100);
+    return `<div class="hbar-row">
+      <div class="hbar-label" title="${o.variedad}">${o.variedad}</div>
+      <div class="hbar-track"><div class="hbar-fill" style="width:${width.toFixed(1)}%"></div></div>
+      <div class="hbar-value">${fmt(o.venta)}</div>
+    </div>`;
+  }).join('') || '<div class="hbar-row"><div class="hbar-label" style="color:var(--text-muted);">Sin datos todavía</div></div>';
+
+  document.getElementById('captionOfertaTabla').textContent = DATA.oferta.length + ' variedades';
+  document.getElementById('tablaOferta').innerHTML = DATA.oferta.map(o => {
+    const share = o.oferta > 0 ? Math.min(100, (o.venta / o.oferta) * 100) : 0;
+    return `<tr>
+      <td>${o.semillero || '—'}</td><td>${o.variedad}</td>
+      <td class="num">${fmt(o.oferta)}</td><td class="num">${fmt(o.venta)}</td><td class="num">${fmt(o.disponible)}</td>
+      <td class="num"><div class="mini-bar"><div class="track"><div class="fill" style="width:${share.toFixed(1)}%"></div></div><span class="pct">${fmt1(share)}%</span></div></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">Sin datos de oferta cargados todavía</td></tr>';
+
+  renderVencidos();
+
+  animateCountUp();
+  sincronizarFiltros();
+}
+
+// ================= VENCIDOS Y POR VENCER =================
+// Los cálculos vienen hechos del servidor (lib/vencidos.js): acá solo se dibuja.
+function ddmm(iso) { return iso ? iso.slice(8, 10) + '/' + iso.slice(5, 7) : '—'; }
+function renderVencidos() {
+  const V = DATA.vencidos;
+  const sec = document.getElementById('view-vencidos');
+  if (!V) { sec.querySelector('#calloutVencidos').innerHTML = '<div><div class="big">Sin datos</div><div class="desc">El servidor no devolvió el cálculo de vencidos.</div></div>'; return; }
+  const R = V.resumen;
+  document.getElementById('vencSubtitulo').textContent =
+    `Corte: hoy ${ddmm(V.hoy)} · "por vencer" = entrega entre hoy y el ${ddmm(V.hasta)}`;
+
+  const callout = document.getElementById('calloutVencidos');
+  if (R.sin_cruce) {
+    callout.className = 'callout crit';
+    callout.innerHTML = `<div><div class="big">Falta actualizar el importador</div><div class="desc">Prod. Final llegó sin la columna "Concatenado", así que no se puede saber qué está despachado o listo: todo figura como sin producir. Corré actualizar_todo con la versión nueva de importar_datos.js.</div></div><span class="status-badge crit">Datos incompletos</span>`;
+  } else {
+    callout.className = 'callout';
+    callout.innerHTML = `<div><div class="big">${fmt(R.kg_vencido)} kg vencidos en ${R.clientes_vencidos} clientes</div><div class="desc">${fmt(R.kg_listo_vencido)} kg de eso ya están terminados en planta: son los primeros llamados para confirmar recepción y liberar carga. Además vencen ${fmt(R.kg_por_vencer)} kg en los próximos ${V.dias_por_vencer} días (${fmt(R.kg_listo_por_vencer)} kg listos).</div></div><span class="status-badge ${R.kg_vencido > 0 ? 'crit' : 'ok'}">${R.kg_vencido > 0 ? 'Hay vencidos' : 'Sin vencidos'}</span>`;
+  }
+
+  document.getElementById('kpiVencidos').innerHTML = [
+    kpiCard('Kg vencidos sin despachar', R.kg_vencido, {unit:' kg', icon:'alert-triangle', note: fmt(R.kg_listo_vencido) + ' kg listos en planta'}),
+    kpiCard('Clientes con vencidos', R.clientes_vencidos, {icon:'users', note: R.pedidos_vencidos + ' pedidos'}),
+    kpiCard('Vencidos sin producir', R.kg_sin_producir_vencido, {unit:' kg', icon:'clock', note:'incluye lo que está en proceso'}),
+    kpiCard('Por vencer (' + V.dias_por_vencer + ' días)', R.kg_por_vencer, {unit:' kg', icon:'truck', note: fmt(R.kg_listo_por_vencer) + ' kg listos'}),
+  ].join('');
+
+  const badge = { 1: 'crit', 2: 'warn', 3: 'ok', 4: 'info' };
+  const n0 = (v) => v ? fmt(v) : '—';
+  document.getElementById('tablaLlamados').innerHTML = V.clientes.map(c => {
+    const pend = c.kg_vencido + c.kg_por_vencer;
+    const pl = pend ? (100 * Math.min(c.kg_listo, pend) / pend) : 0;
+    return `<tr>
+      <td class="num cero">${c.prioridad}</td>
+      <td class="cli">${escAttr(c.cliente)}<span class="sub">${escAttr(c.pedidos)} · ${escAttr(c.variedades.replace(/, /g, ' · '))}</span></td>
+      <td><span class="status-badge ${badge[c.grupo]}">${escAttr(c.accion)}</span></td>
+      <td class="wrap">${escAttr(c.programacion)}</td>
+      <td class="num">${n0(c.kg_vencido)}<div class="venc-bar" style="width:100%"><span style="width:${pl.toFixed(0)}%;background:var(--accent)"></span><span style="width:${(100 - pl).toFixed(0)}%;background:var(--series-3)"></span></div></td>
+      <td class="num">${n0(c.kg_por_vencer)}</td>
+      <td class="num">${n0(c.kg_listo)}</td>
+      <td class="num">${n0(c.kg_sin_producir)}</td>
+      <td class="num ${c.dias_atraso >= 14 ? 'rojo' : ''}">${c.dias_atraso || '—'}</td>
+      <td class="num">${ddmm(c.prox_entrega)}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--text-muted);">No hay pedidos vencidos ni por vencer</td></tr>';
+
+  const maxVar = Math.max(1, ...V.variedades.map(v => v.kg_vencido));
+  document.getElementById('vencVariedades').innerHTML = V.variedades.map(v => {
+    const w = 100 * v.kg_vencido / maxVar;
+    const wl = v.kg_vencido ? 100 * v.kg_listo / v.kg_vencido : 0;
+    return `<div class="hbar-row venc">
+      <div class="hbar-label" title="${escAttr(v.variedad)}">${escAttr(v.variedad)}</div>
+      <div class="hbar-track split"><div style="display:flex;width:${w.toFixed(1)}%"><div class="hbar-fill" style="width:${wl.toFixed(1)}%;background:var(--accent)"></div><div class="hbar-fill" style="width:${(100 - wl).toFixed(1)}%;background:var(--series-3)"></div></div></div>
+      <div class="hbar-value">${n0(v.kg_vencido)}${v.kg_listo ? `<span class="hbar-sub">${fmt(v.kg_listo)} listos</span>` : ''}</div>
+      <div class="hbar-value" style="color:var(--text-muted)">${v.kg_por_vencer ? fmt(v.kg_por_vencer) : '—'}<span class="hbar-sub">7 días</span></div>
+    </div>`;
+  }).join('') || '<div class="hbar-row"><div class="hbar-label" style="color:var(--text-muted);">Sin vencidos</div></div>';
+
+  // Gráfico por fecha: desde 30 días antes de hoy (lo vencido de verdad viejo
+  // se agrupa en la primera barra) hasta lo último pendiente.
+  const desde = new Date(Date.UTC(+V.hoy.slice(0,4), +V.hoy.slice(5,7)-1, +V.hoy.slice(8,10) - 30)).toISOString().slice(0,10);
+  const fechas = [];
+  const viejo = { label: 'antes ' + ddmm(desde), kg_listo: 0, kg_resto: 0 };
+  const tope = new Date(Date.UTC(+V.hoy.slice(0,4), +V.hoy.slice(5,7)-1, +V.hoy.slice(8,10) + 45)).toISOString().slice(0,10);
+  for (const f of V.fechas) {
+    if (f.fecha > tope) continue;
+    if (f.fecha < desde) { viejo.kg_listo += f.kg_listo; viejo.kg_resto += f.kg_resto; }
+    else fechas.push({ label: (f.fecha === V.hoy ? 'HOY ' : '') + ddmm(f.fecha), kg_listo: f.kg_listo, kg_resto: f.kg_resto });
+  }
+  if (viejo.kg_listo + viejo.kg_resto > 0) fechas.unshift(viejo);
+  document.getElementById('captionVencFechas').textContent = 'Lo que falta despachar, del ' + ddmm(desde) + ' al ' + ddmm(tope) + ' · lo anterior a ' + ddmm(V.hoy) + ' está vencido';
+  if (fechas.length) {
+    drawBarChart('chartVencFechas', 'ttVencFechas', fechas.map(f => f.label),
+      [{ name: 'Listo en planta', values: fechas.map(f => f.kg_listo) }, { name: 'Sin producir / en proceso', values: fechas.map(f => f.kg_resto) }],
+      { unit: ' kg', stacked: true, rotateLabels: true, colorVars: ['--accent', '--series-3'], padL: 62 });
+  }
+
+  const estBadge = { 'Vencido': 'crit', 'Por vencer': 'warn', 'A tiempo': 'ok' };
+  const lineas = V.lineas.slice().sort((a, b) => b.dias_atraso - a.dias_atraso);
+  document.getElementById('captionVencLineas').textContent = lineas.length + ' líneas con kilos sin despachar (vencidas, por vencer y a tiempo). Usá los filtros de cada columna.';
+  document.getElementById('tablaVencidosLineas').innerHTML = lineas.map(r => `<tr>
+      <td><span class="status-badge ${estBadge[r.estado] || 'info'}">${r.estado}</span></td>
+      <td>${escAttr(r.cliente)}<span class="sub2">${escAttr([r.pedido, r.vendedor].filter(Boolean).join(' · '))}</span></td><td>${escAttr(r.variedad)}<span class="sub2">${escAttr(r.envase || '')}</span></td>
+      <td class="num">${ddmm(r.fecha_entrega)}</td>
+      <td class="num ${r.estado === 'Vencido' && r.dias_atraso >= 14 ? 'rojo' : ''}">${r.dias_atraso > 0 ? r.dias_atraso : ''}</td>
+      <td class="num">${fmt(r.kg_pedido)}</td><td class="num">${fmt(r.kg_despachado)}</td><td class="num">${fmt(r.kg_pendiente)}</td><td class="num">${fmt(r.kg_listo)}</td>
+ <td class="wrap">${escAttr(r.programacion)}</td>
+    </tr>`).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--text-muted);">Sin datos</td></tr>';
+}
+
+
+/* ================= Filtros por columna en las tablas =================
+   Capa independiente: agrega una fila de casillas debajo de los titulos
+   de cada <table class="data-table"> y esconde las filas que no coinciden.
+   No modifica DATA ni el codigo que dibuja las tablas: solo muestra u
+   oculta <tr> que ya estan renderizados. */
+
+function esFilaSinDatos(tr) {
+  return tr.children.length === 1 && tr.children[0].hasAttribute('colspan');
+}
+
+// "9.360" -> 9360, "234,0" -> 234.0, "—" o vacio -> 0. Formato es-AR: "." de
+// miles, "," decimal — el mismo que usan fmt()/fmt1() al escribir la celda.
+function parseNumEs(txt) {
+  const t = (txt || '').trim();
+  if (!t || t === '—') return 0;
+  const n = parseFloat(t.replace(/\./g, '').replace(',', '.'));
+  return Number.isFinite(n) ? n : 0;
+}
+
+function formatSuma(n, decimales) {
+  return n.toLocaleString('es-AR', { minimumFractionDigits: decimales, maximumFractionDigits: decimales });
+}
+
+function aplicarFiltro(table) {
+  const inputs = Array.from(table.querySelectorAll('tr.filter-row .f-input'));
+  const criterios = inputs.map(i => i.value.trim().toLowerCase());
+  inputs.forEach((i, n) => i.classList.toggle('activo', criterios[n] !== ''));
+
+  const sumCols = table._sumCols || [];
+  const sumas = sumCols.map(() => 0);
+
+  let total = 0, visibles = 0;
+  table.querySelectorAll('tbody tr').forEach(tr => {
+    if (esFilaSinDatos(tr)) return;
+    total++;
+    let pasa = true;
+    for (let n = 0; n < criterios.length && pasa; n++) {
+      if (!criterios[n]) continue;
+      const celda = tr.children[n];
+      const txt = celda ? celda.textContent.toLowerCase() : '';
+      // Que escribir "4026" tambien encuentre "4.026".
+      if (!txt.includes(criterios[n]) && !txt.replace(/\./g, '').includes(criterios[n])) pasa = false;
+    }
+    tr.style.display = pasa ? '' : 'none';
+    if (pasa) {
+      visibles++;
+      sumCols.forEach((c, i) => { sumas[i] += parseNumEs(tr.children[c.index] && tr.children[c.index].textContent); });
+    }
+  });
+
+  const activos = criterios.filter(c => c !== '').length;
+  if (table._filtroInfo) {
+    if (activos) {
+      let texto = 'Mostrando ' + visibles + ' de ' + total;
+      sumCols.forEach((c, i) => { texto += ' · ' + formatSuma(sumas[i], c.decimales) + c.sufijo; });
+      table._filtroTexto.textContent = texto;
+      table._filtroTexto.classList.toggle('vacio', visibles === 0);
+      table._filtroInfo.classList.add('visible');
+    } else {
+      table._filtroInfo.classList.remove('visible');
+    }
+  }
+  if (typeof table._onSumas === 'function') table._onSumas(sumas, sumCols, visibles, total, activos);
+  return { total: total, visibles: visibles };
+}
+
+function prepararFiltros(table) {
+  if (table._filtrosListos) return;
+  const thead = table.querySelector('thead');
+  const tbody = table.querySelector('tbody');
+  if (!thead || !tbody) return;
+  const titulos = thead.querySelector('tr');
+  if (!titulos || !titulos.children.length) return;
+
+  // Columnas que muestran su suma (de las filas visibles) junto al contador
+  // de filtro — hoy solo Kg y Bolsas en Despachos. Se lee de data-sum en el
+  // <th> original: no hace falta tocar DATA, es la misma capa independiente
+  // que ya arma la fila de filtros.
+  table._sumCols = Array.from(titulos.children)
+    .map((th, index) => ({ th, index }))
+    .filter(({ th }) => th.hasAttribute('data-sum'))
+    .map(({ th, index }) => ({
+      index,
+      sufijo: th.getAttribute('data-sum-suffix') || '',
+      decimales: parseInt(th.getAttribute('data-sum-decimals') || '0', 10),
+    }));
+
+  const fila = document.createElement('tr');
+  fila.className = 'filter-row';
+  Array.from(titulos.children).forEach(th => {
+    const nombre = th.textContent.trim();
+    const celda = document.createElement('th');
+    // Columnas que no se filtran (por ejemplo la del ojo): celda vacia.
+    if (th.classList.contains('col-ojo')) {
+      celda.className = 'col-ojo';
+      fila.appendChild(celda);
+      return;
+    }
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'f-input';
+    inp.placeholder = nombre;
+    inp.autocomplete = 'off';
+    inp.setAttribute('aria-label', 'Filtrar por ' + nombre);
+    inp.addEventListener('input', () => aplicarFiltro(table));
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { inp.value = ''; aplicarFiltro(table); }
+    });
+    celda.appendChild(inp);
+    fila.appendChild(celda);
+  });
+  thead.appendChild(fila);
+
+  const info = document.createElement('div');
+  info.className = 'filter-count';
+  const texto = document.createElement('span');
+  const limpiar = document.createElement('button');
+  limpiar.type = 'button';
+  limpiar.textContent = 'Limpiar filtros';
+  limpiar.addEventListener('click', () => {
+    fila.querySelectorAll('.f-input').forEach(i => { i.value = ''; });
+    aplicarFiltro(table);
+  });
+  info.appendChild(texto);
+  info.appendChild(limpiar);
+  (table.closest('.table-scroll') || table).insertAdjacentElement('afterend', info);
+
+  table._filtroFila = fila;
+  table._filtroTexto = texto;
+  table._filtroInfo = info;
+  table._filtrosListos = true;
+
+  // Alto de la fila de titulos, para que las casillas queden pegadas
+  // abajo de ella cuando la tabla tiene encabezado fijo.
+  requestAnimationFrame(() => {
+    const h = titulos.getBoundingClientRect().height;
+    if (h) table.style.setProperty('--head-h', h + 'px');
+  });
+}
+
+function sincronizarFiltros() {
+  document.querySelectorAll('table.data-table').forEach(table => {
+    prepararFiltros(table);
+    aplicarFiltro(table);
+  });
+}
+
+/* ================= Calidad del lote (ojo de la solapa Despachos) =================
+   Cada linea de la tabla de Despacho tiene un ojo al final. Al hacer clic,
+   busca en DATA.lotes (la hoja "Intermedio") las filas cuyo "Lote Final"
+   coincide con el lote de esa linea, y muestra PG, PG curado y P1000.
+
+   Los datos ya vienen en DATA.lotes, asi que no hace falta pedirle nada al
+   servidor: la ventana abre al instante. Si un lote tiene mas de una fila en
+   Intermedio, se muestran todas. */
+
+const ICONO_OJO = '<svg viewBox="0 0 24 24"><path d="M2 12s3.6-6.6 10-6.6 10 6.6 10 6.6-3.6 6.6-10 6.6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.9"/></svg>';
+
+function escAttr(v) {
+  return String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// Un valor de laboratorio vacio puede venir como null, '' o 0 (el 0 es el
+// relleno que deja el Excel cuando todavia no hay resultado).
+function valorVacio(v) {
+  if (v === null || v === undefined) return true;
+  const t = String(v).trim();
+  return t === '' || t === '0';
+}
+
+function lotesDelLote(lote) {
+  if (!lote || typeof DATA === 'undefined' || !DATA || !Array.isArray(DATA.lotes)) return [];
+  const clave = String(lote).trim().toLowerCase();
+  return DATA.lotes.filter(l => l.lote && String(l.lote).trim().toLowerCase() === clave);
+}
+
+function botonOjo(lote) {
+  if (!lote) {
+    return '<button class="btn-ojo" disabled title="Esta línea no tiene lote final">' + ICONO_OJO + '</button>';
+  }
+  const hay = lotesDelLote(lote).length > 0;
+  const t = hay ? 'Ver calidad del lote ' + lote : 'El lote ' + lote + ' no figura en Intermedio';
+  return '<button class="btn-ojo" data-lote="' + escAttr(lote) + '"' + (hay ? '' : ' disabled') +
+         ' title="' + escAttr(t) + '" aria-label="' + escAttr(t) + '">' + ICONO_OJO + '</button>';
+}
+
+function celdaCalidad(etiqueta, valor, unidad) {
+  const vacio = valorVacio(valor);
+  const texto = vacio ? '—' : String(valor).trim();
+  const un = (!vacio && unidad) ? '<span class="un">' + unidad + '</span>' : '';
+  return '<div class="calidad-dato"><div class="et">' + etiqueta + '</div>' +
+         '<div class="vl' + (vacio ? ' vacio' : '') + '">' + texto + un + '</div></div>';
+}
+
+function bloqueCalidad(l) {
+  const meta = [];
+  if (l.variedad) meta.push('Variedad <b>' + l.variedad + '</b>');
+  if (l.procedencia) meta.push('Procedencia <b>' + l.procedencia + '</b>');
+  if (l.pureza) meta.push('Pureza <b>' + l.pureza + '</b>');
+  if (l.ok_calidad) meta.push('Ok calidad <b>' + l.ok_calidad + '</b>');
+  const sinDatos = valorVacio(l.pg) && valorVacio(l.pg_curado) && valorVacio(l.p1000);
+  return '<div class="calidad-grid">' +
+      celdaCalidad('PG', l.pg, '%') +
+      celdaCalidad('PG curado', l.pg_curado, '%') +
+      celdaCalidad('P1000', l.p1000, 'g') +
+    '</div>' +
+    (sinDatos ? '<div class="calidad-aviso" style="margin-top:12px;">Este lote todavía no tiene resultados de laboratorio cargados en la hoja "Intermedio".</div>' : '') +
+    (meta.length ? '<div class="calidad-sub">Datos del lote</div><div class="calidad-meta">' + meta.join(' · ') + '</div>' : '');
+}
+
+function abrirCalidad(lote) {
+  const filas = lotesDelLote(lote);
+  const caja = document.getElementById('modalCalidad');
+  document.getElementById('modalCalidadTitulo').textContent = 'Calidad del lote ' + lote;
+  document.getElementById('modalCalidadSub').textContent =
+    filas.length > 1 ? filas.length + ' procesos' : '';
+
+  const cuerpo = document.getElementById('modalCalidadCuerpo');
+  if (!filas.length) {
+    cuerpo.innerHTML = '<div class="calidad-aviso">No encontré el lote <b>' + lote + '</b> en la hoja "Intermedio".</div>';
+  } else if (filas.length === 1) {
+    cuerpo.innerHTML = bloqueCalidad(filas[0]);
+  } else {
+    cuerpo.innerHTML = filas.map((l, i) =>
+      '<div' + (i ? ' style="margin-top:20px;padding-top:18px;border-top:1px solid var(--gridline);"' : '') + '>' +
+      '<div class="calidad-sub" style="margin-top:0;">Proceso ' + (i + 1) + ' de ' + filas.length + '</div>' +
+      bloqueCalidad(l) + '</div>').join('');
+  }
+  caja.classList.add('abierto');
+  document.getElementById('modalCalidadCerrar').focus();
+}
+
+function cerrarCalidad() {
+  document.getElementById('modalCalidad').classList.remove('abierto');
+}
+
+// Ventana de "Pedidos a confirmar" (solapa Despachos) — mismo patrón que
+// la ventana de calidad, la tabla ya está armada en el DOM por renderAll().
+function abrirPorConfirmar() {
+  document.getElementById('modalPorConfirmar').classList.add('abierto');
+  const cerrar = document.getElementById('modalPorConfirmarCerrar');
+  if (cerrar) cerrar.focus();
+}
+
+function cerrarPorConfirmar() {
+  document.getElementById('modalPorConfirmar').classList.remove('abierto');
+}
+
+document.addEventListener('click', (e) => {
+  const boton = e.target.closest('.btn-ojo');
+  if (boton && !boton.disabled && boton.dataset.lote) { abrirCalidad(boton.dataset.lote); return; }
+  if (e.target.closest('#modalCalidadCerrar')) { cerrarCalidad(); return; }
+  if (e.target.id === 'modalCalidad') cerrarCalidad(); // clic fuera de la caja
+  if (e.target.closest('#modalPorConfirmarCerrar')) { cerrarPorConfirmar(); return; }
+  if (e.target.id === 'modalPorConfirmar') cerrarPorConfirmar(); // clic fuera de la caja
+
+  // ---- Modales de Cupos: cerrar con el botón (x) o clic fuera de la caja ----
+  const CUPOS_MODALES = ['modalCuposNueva', 'modalCuposDia', 'modalCuposProponer', 'modalCuposHistCarga'];
+  for (const id of CUPOS_MODALES) {
+    if (e.target.closest('#' + id + 'Cerrar')) { cerrarModalCupos(id); return; }
+    if (e.target.id === id) { cerrarModalCupos(id); return; }
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  // Si las dos ventanas están abiertas (calidad se abre desde adentro de
+  // "Pedidos a confirmar"), Escape cierra primero la de arriba (calidad) y
+  // deja la de abajo como estaba — no las dos de un solo golpe.
+  if (document.getElementById('modalCalidad').classList.contains('abierto')) { cerrarCalidad(); return; }
+  if (document.getElementById('modalPorConfirmar').classList.contains('abierto')) { cerrarPorConfirmar(); return; }
+  // De los modales de Cupos, los que pueden quedar apilados: Proponer o
+  // Historial se abren desde arriba de Nueva carga o Detalle de día. Cerrar
+  // primero el de más arriba.
+  const ORDEN_CUPOS = ['modalCuposProponer', 'modalCuposHistCarga', 'modalCuposNueva', 'modalCuposDia'];
+  for (const id of ORDEN_CUPOS) {
+    if (document.getElementById(id)?.classList.contains('abierto')) { cerrarModalCupos(id); return; }
+  }
+});
+
+async function cargarPanel() {
+  const overlay = document.getElementById('loadingOverlay');
+  try {
+    const res = await fetch('/api/data', { credentials: 'same-origin' });
+    if (res.status === 401) { window.location.href = '/login.html'; return; }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    DATA = json.data;
+    const ub = document.getElementById('userNombre');
+    if (ub && json.usuario) ub.textContent = json.usuario.nombre_completo || json.usuario.usuario;
+    const upd = document.getElementById('lastUpdate');
+    if (upd && json.actualizado) upd.textContent = 'Actualizado ' + new Date(json.actualizado).toLocaleString('es-AR');
+    if (overlay) overlay.remove();
+    renderAll();
+  } catch (err) {
+    console.error(err);
+    if (overlay) overlay.innerHTML = '<div class="loading-box"><p>No se pudieron cargar los datos.</p><p style="opacity:.7;font-size:13px;">Recargá la página. Si el problema sigue, avisale a Dario.</p></div>';
+  }
+}
+
+document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+  await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' });
+  window.location.href = '/login.html';
+});
+
+// ================= CUPOS Y PROGRAMACIÓN DE CAMIONES/CARROS =================
+// Módulo autónomo: no depende de DATA/renderAll (esos vienen de /api/data, que
+// solo trae los datos del Excel). Esta solapa tiene su propio fetch a los
+// endpoints /api/cupos/* y se carga la primera vez que se abre la solapa.
+
+let CUPOS_LUNES = null;
+let CUPOS_SEMANA = null;
+let CUPOS_FILTRO_ESTADO = 'pendiente';
+let CUPOS_CARGA_PROPONER = null; // { id, pedido, tipoEquipo }
+
+const CUPOS_NOMBRES_DIA = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+const CUPOS_ETIQUETA_ESTADO_DIA = { verde:'Disponible', amarillo:'Pocos cupos', rojo:'Completo', gris:'Sin configurar' };
+const CUPOS_ESTADO_BADGE = { pendiente:'warn', programado:'info', despachado:'ok', cancelado:'crit' };
+const CUPOS_ESTADO_LABEL = { pendiente:'Pendiente', programado:'Programado', despachado:'Despachado', cancelado:'Cancelado' };
+const CUPOS_MOVIMIENTO_LABEL = {
+  creacion:'Alta', programacion:'Programación', reprogramacion:'Reprogramación',
+  cancelacion:'Cancelación', despacho:'Despacho', reapertura:'Reapertura', cambio_modalidad:'Cambio de modalidad',
+};
+
+function cuposHoyISO() { return new Date().toISOString().slice(0, 10); }
+function cuposAddDias(fechaISO, n) {
+  const d = new Date(fechaISO + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+function cuposDiaSemana(fechaISO) { return new Date(fechaISO + 'T00:00:00Z').getUTCDay(); }
+function cuposLunesDeSemana(fechaISO) {
+  const offset = (cuposDiaSemana(fechaISO) + 6) % 7;
+  return cuposAddDias(fechaISO, -offset);
+}
+function cuposFechaCorta(fechaISO) {
+  return new Date(fechaISO + 'T00:00:00Z').toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric', timeZone:'UTC' });
+}
+function cuposFechaLarga(fechaISO) {
+  const d = new Date(fechaISO + 'T00:00:00Z');
+  return CUPOS_NOMBRES_DIA[d.getUTCDay()] + ' ' + d.toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric', timeZone:'UTC' });
+}
+
+function abrirModalCupos(id) { document.getElementById(id).classList.add('abierto'); }
+function cerrarModalCupos(id) { document.getElementById(id).classList.remove('abierto'); }
+
+async function cargarCupos(lunes) {
+  CUPOS_LUNES = lunes || CUPOS_LUNES || cuposLunesDeSemana(cuposHoyISO());
+  document.getElementById('cuposSemanaLabel').textContent = 'Semana del ' + cuposFechaCorta(CUPOS_LUNES);
+  await Promise.all([cargarCuposSemana(), cargarCuposTablaCargas(), cargarCuposHistorial()]);
+}
+
+async function cargarCuposSemana() {
+  try {
+    const res = await fetch('/api/cupos/semana?lunes=' + CUPOS_LUNES, { credentials: 'same-origin' });
+    if (res.status === 401) { window.location.href = '/login.html'; return; }
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Error cargando la semana');
+    CUPOS_SEMANA = json;
+    renderCuposSemana();
+  } catch (err) {
+    console.error(err);
+    document.getElementById('cuposDiaGrid').innerHTML = `<div class="aviso-caja crit">No se pudo cargar la semana: ${err.message}</div>`;
+  }
+}
+
+function colorDia(dia) {
+  const partes = [];
+  if (dia.camion.maximo > 0) partes.push(dia.camion);
+  if (dia.carro.maximo > 0) partes.push(dia.carro);
+  if (!dia.modalidad || !partes.length) return 'gris';
+  const disponibleTotal = partes.reduce((s, p) => s + p.disponibles, 0);
+  if (disponibleTotal <= 0) return 'rojo';
+  const peorFraccion = Math.max(...partes.map(p => p.ocupados / p.maximo));
+  return peorFraccion >= 0.8 ? 'amarillo' : 'verde';
+}
+
+function cuposGaugeHtml(label, obj) {
+  const pctOcup = obj.maximo > 0 ? Math.min(100, (obj.ocupados / obj.maximo) * 100) : 0;
+  return `<div class="dia-gauge"><span class="dia-gauge-label">${label}</span>
+    <div class="mini-bar"><div class="track"><div class="fill" style="width:${pctOcup}%"></div></div>
+    <span class="pct">${obj.ocupados}/${obj.maximo}</span></div></div>`;
+}
+
+function diaCardHtml(dia) {
+  const estado = colorDia(dia);
+  const fechaObj = new Date(dia.fecha + 'T00:00:00Z');
+  const nombreDia = CUPOS_NOMBRES_DIA[fechaObj.getUTCDay()];
+  const fechaCorta = fechaObj.toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', timeZone:'UTC' });
+  const cargasVisibles = dia.cargas.slice(0, 3);
+  const extra = dia.cargas.length - cargasVisibles.length;
+  const miniCargas = dia.cargas.length
+    ? cargasVisibles.map(c => `<div class="dia-carga-chip">${c.pedido} · ${c.tipo_equipo === 'camion' ? 'Camión' : 'Carro'}</div>`).join('')
+      + (extra > 0 ? `<div class="dia-carga-mas">+${extra} más</div>` : '')
+    : '<div class="dia-vacio">Sin cargas programadas</div>';
+  return `<div class="dia-card" data-estado="${estado}" data-fecha="${dia.fecha}">
+    <div class="dia-head">
+      <div><div class="dia-nombre">${nombreDia}</div><div class="dia-fecha">${fechaCorta}</div></div>
+      <span class="dia-badge ${estado}">${CUPOS_ETIQUETA_ESTADO_DIA[estado]}</span>
+    </div>
+    ${dia.modalidad ? `
+      <div class="dia-modalidad">Modalidad <b>${dia.modalidad}</b></div>
+      ${cuposGaugeHtml('Camiones', dia.camion)}
+      ${dia.modalidad === 'B' ? cuposGaugeHtml('Carros', dia.carro) : ''}
+    ` : `<div class="dia-sin-modalidad">Sin modalidad configurada — clic para fijarla</div>`}
+    <div class="dia-cargas-mini">${miniCargas}</div>
+  </div>`;
+}
+
+function renderCuposSemana() {
+  const s = CUPOS_SEMANA;
+  let totalCamion = 0, maxCamion = 0, totalCarro = 0, maxCarro = 0;
+  s.dias.forEach(d => { totalCamion += d.camion.ocupados; maxCamion += d.camion.maximo; totalCarro += d.carro.ocupados; maxCarro += d.carro.maximo; });
+  document.getElementById('kpiCupos').innerHTML = [
+    kpiCard('Programado esta semana', totalCamion + totalCarro, { note: totalCamion + ' camiones · ' + totalCarro + ' carros', icon: 'truck' }),
+    kpiCard('Pendientes de asignar', s.pendientes_total, { icon: 'layers' }),
+    kpiCard('Cupos libres esta semana', Math.max(maxCamion - totalCamion, 0) + Math.max(maxCarro - totalCarro, 0), { note: 'camiones + carros, toda la semana', icon: 'gauge' }),
+    kpiCard('Despachadas esta semana', s.despachadas_semana, { icon: 'check-circle' }),
+  ].join('');
+  document.getElementById('cuposDiaGrid').innerHTML = s.dias.map(diaCardHtml).join('');
+  animateCountUp();
+}
+
+document.getElementById('cuposSemanaPrev').addEventListener('click', () => cargarCupos(cuposAddDias(CUPOS_LUNES, -7)));
+document.getElementById('cuposSemanaNext').addEventListener('click', () => cargarCupos(cuposAddDias(CUPOS_LUNES, 7)));
+document.getElementById('cuposIrHoy').addEventListener('click', () => cargarCupos(cuposLunesDeSemana(cuposHoyISO())));
+document.getElementById('cuposDiaGrid').addEventListener('click', (e) => {
+  const card = e.target.closest('.dia-card');
+  if (card) abrirDetalleDia(card.dataset.fecha);
+});
+
+// ---------------- Nueva carga ----------------
+
+document.getElementById('cuposBtnNuevaCarga').addEventListener('click', () => {
+  document.getElementById('formCuposNueva').reset();
+  document.getElementById('formCuposNuevaError').innerHTML = '';
+  abrirModalCupos('modalCuposNueva');
+});
+document.getElementById('formCuposNuevaCancelar').addEventListener('click', () => cerrarModalCupos('modalCuposNueva'));
+document.getElementById('formCuposNueva').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = {
+    pedido: (fd.get('pedido') || '').trim(),
+    tipoEquipo: fd.get('tipoEquipo'),
+    cliente: (fd.get('cliente') || '').trim() || null,
+    producto: (fd.get('producto') || '').trim() || null,
+    patente: (fd.get('patente') || '').trim() || null,
+    fechaDeseada: fd.get('fechaDeseada') || null,
+    observaciones: (fd.get('observaciones') || '').trim() || null,
+  };
+  const errEl = document.getElementById('formCuposNuevaError');
+  errEl.innerHTML = '';
+  try {
+    const res = await fetch('/api/cupos/cargas', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(body),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'No se pudo guardar la carga');
+    cerrarModalCupos('modalCuposNueva');
+    await Promise.all([cargarCuposTablaCargas(), cargarCuposHistorial()]);
+    if (confirm(`Carga "${json.pedido}" guardada como pendiente. ¿Querés programarla ahora?`)) {
+      abrirProponer(json.id, json.pedido, json.tipo_equipo, json.fecha_deseada);
+    }
+  } catch (err) {
+    errEl.innerHTML = `<div class="aviso-caja crit">${err.message}</div>`;
+  }
+});
+
+// ---------------- Tabla de cargas (filtro por estado) ----------------
+
+document.getElementById('cuposFiltroEstado').addEventListener('click', (e) => {
+  const btn = e.target.closest('.sheet-pill');
+  if (!btn) return;
+  document.querySelectorAll('#cuposFiltroEstado .sheet-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  CUPOS_FILTRO_ESTADO = btn.dataset.estado;
+  cargarCuposTablaCargas();
+});
+
+function filaAccionesCarga(c) {
+  const btns = [];
+  if (c.estado === 'pendiente') {
+    btns.push(`<button type="button" class="btn-mini pri" data-accion="programar" data-id="${c.id}">Programar</button>`);
+    btns.push(`<button type="button" class="btn-mini danger" data-accion="cancelar" data-id="${c.id}">Cancelar</button>`);
+  } else if (c.estado === 'programado') {
+    btns.push(`<button type="button" class="btn-mini pri" data-accion="reprogramar" data-id="${c.id}">Reprogramar</button>`);
+    btns.push(`<button type="button" class="btn-mini" data-accion="despachar" data-id="${c.id}">Despachar</button>`);
+    btns.push(`<button type="button" class="btn-mini danger" data-accion="cancelar" data-id="${c.id}">Cancelar</button>`);
+  } else if (c.estado === 'despachado' || c.estado === 'cancelado') {
+    btns.push(`<button type="button" class="btn-mini" data-accion="reabrir" data-id="${c.id}">Reabrir</button>`);
+  }
+  btns.push(`<button type="button" class="btn-mini" data-accion="historial" data-id="${c.id}">Historial</button>`);
+  return `<div class="fila-acciones">${btns.join('')}</div>`;
+}
+
+function filaCuposCarga(c) {
+  return `<tr>
+    <td>${c.pedido}</td><td>${c.cliente || '—'}</td><td>${c.producto || '—'}</td>
+    <td>${c.tipo_equipo === 'camion' ? 'Camión' : 'Carro'}</td><td>${c.patente || '—'}</td>
+    <td>${c.fecha_deseada || '—'}</td><td>${c.fecha_asignada || '—'}</td>
+    <td>${c.usuario_nombre || c.usuario_usuario || '—'}</td>
+    <td>${filaAccionesCarga(c)}</td>
+  </tr>`;
+}
+
+async function cargarCuposTablaCargas() {
+  const tbody = document.getElementById('cuposTablaCargas');
+  try {
+    const res = await fetch('/api/cupos/cargas?estado=' + CUPOS_FILTRO_ESTADO, { credentials: 'same-origin' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error');
+    document.getElementById('cuposCaptionTabla').textContent = data.length + (data.length === 1 ? ' carga' : ' cargas');
+    tbody.innerHTML = data.map(filaCuposCarga).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--text-muted);">Sin cargas en este estado</td></tr>';
+  } catch (err) {
+    console.error(err);
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--critical);">Error al cargar</td></tr>';
+  }
+}
+
+// ---------------- Acciones sobre una carga (programar/cancelar/despachar/reabrir/historial) ----------------
+
+async function obtenerCuposCarga(id) {
+  try {
+    const res = await fetch('/api/cupos/cargas/' + id, { credentials: 'same-origin' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error');
+    return data;
+  } catch (err) {
+    alert('Error: ' + err.message);
+    return null;
+  }
+}
+
+async function accionCuposCarga(id, accion, body) {
+  try {
+    const res = await fetch(`/api/cupos/cargas/${id}/${accion}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(body || {}),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error');
+    await cargarCupos(CUPOS_LUNES);
+    return data;
+  } catch (err) {
+    alert('No se pudo completar la acción: ' + err.message);
+    return null;
+  }
+}
+
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-accion][data-id]');
+  if (!btn) return;
+  const id = btn.dataset.id;
+  const accion = btn.dataset.accion;
+  if (accion === 'programar' || accion === 'reprogramar') {
+    const carga = await obtenerCuposCarga(id);
+    if (carga) abrirProponer(carga.id, carga.pedido, carga.tipo_equipo, carga.fecha_asignada || carga.fecha_deseada);
+  } else if (accion === 'cancelar') {
+    const motivo = prompt('Motivo de la cancelación (opcional). "Cancelar" en este cuadro no cancela la carga:');
+    if (motivo === null) return;
+    await accionCuposCarga(id, 'cancelar', { motivo: motivo.trim() || null });
+  } else if (accion === 'despachar') {
+    if (!confirm('¿Marcar esta carga como despachada?')) return;
+    await accionCuposCarga(id, 'despachar', {});
+  } else if (accion === 'reabrir') {
+    const motivo = prompt('Motivo de la reapertura (opcional). "Cancelar" en este cuadro no reabre la carga:');
+    if (motivo === null) return;
+    await accionCuposCarga(id, 'reabrir', { motivo: motivo.trim() || null });
+  } else if (accion === 'historial') {
+    abrirHistorialCarga(id);
+  }
+});
+
+// ---------------- Proponer / confirmar fecha ----------------
+
+async function abrirProponer(cargaId, pedido, tipoEquipo, fechaDeseada) {
+  CUPOS_CARGA_PROPONER = { id: cargaId, pedido, tipoEquipo };
+  document.getElementById('modalCuposProponerTitulo').textContent = 'Programar carga ' + pedido;
+  document.getElementById('modalCuposProponerSub').textContent = tipoEquipo === 'camion' ? 'Camión' : 'Carro';
+  abrirModalCupos('modalCuposProponer');
+  await consultarPropuesta(fechaDeseada || null);
+}
+
+async function consultarPropuesta(fechaDeseada) {
+  const cuerpo = document.getElementById('modalCuposProponerCuerpo');
+  cuerpo.innerHTML = '<div class="aviso-caja warn">Buscando disponibilidad…</div>';
+  try {
+    const res = await fetch(`/api/cupos/cargas/${CUPOS_CARGA_PROPONER.id}/proponer`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ fechaDeseada }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error consultando disponibilidad');
+    renderPropuesta(data);
+  } catch (err) {
+    cuerpo.innerHTML = `<div class="aviso-caja crit">${err.message}</div>`;
+  }
+}
+
+function renderPropuesta(data) {
+  const cuerpo = document.getElementById('modalCuposProponerCuerpo');
+  if (!data.ok) {
+    cuerpo.innerHTML = `
+      <div class="aviso-caja crit">${data.motivo || 'No hay disponibilidad en el horizonte buscado.'}</div>
+      <div class="form-field"><label for="fpFechaManual">Probar otra fecha</label><input class="input" type="date" id="fpFechaManual"></div>
+      <div class="form-acciones"><button type="button" class="btn-secondary" id="fpBuscarOtra">Buscar</button></div>`;
+    document.getElementById('fpBuscarOtra').addEventListener('click', () => {
+      const f = document.getElementById('fpFechaManual').value;
+      if (f) consultarPropuesta(f);
+    });
+    return;
+  }
+  const fechaFmt = cuposFechaLarga(data.fecha_propuesta);
+  const mensaje = data.exacta
+    ? `La fecha solicitada (${fechaFmt}) tiene cupo libre: ${data.disponibles} de ${data.maximo} disponibles (modalidad ${data.modalidad}).`
+    : `La fecha pedida no tiene cupo. La próxima fecha disponible es <b>${fechaFmt}</b> (${data.disponibles} de ${data.maximo} disponibles, modalidad ${data.modalidad}).`;
+  cuerpo.innerHTML = `
+    <div class="aviso-caja ${data.exacta ? 'ok' : 'warn'}">${mensaje}</div>
+    <div class="form-field"><label for="fpFechaManual">O elegí otra fecha</label><input class="input" type="date" id="fpFechaManual" value="${data.fecha_propuesta}"></div>
+    <div id="fpConfirmError"></div>
+    <div class="form-acciones">
+      <button type="button" class="btn-secondary" id="fpBuscarOtra">Buscar esa fecha</button>
+      <button type="button" class="btn-primary" id="fpConfirmar">Confirmar ${fechaFmt}</button>
+    </div>`;
+  document.getElementById('fpBuscarOtra').addEventListener('click', () => {
+    const f = document.getElementById('fpFechaManual').value;
+    if (f) consultarPropuesta(f);
+  });
+  document.getElementById('fpConfirmar').addEventListener('click', () => confirmarPropuesta(data.fecha_propuesta));
+}
+
+async function confirmarPropuesta(fecha) {
+  const errEl = document.getElementById('fpConfirmError');
+  try {
+    const res = await fetch(`/api/cupos/cargas/${CUPOS_CARGA_PROPONER.id}/confirmar`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ fecha }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al confirmar');
+    cerrarModalCupos('modalCuposProponer');
+    await cargarCupos(CUPOS_LUNES);
+  } catch (err) {
+    if (errEl) errEl.innerHTML = `<div class="aviso-caja crit">${err.message} — probá buscar otra fecha.</div>`;
+    else alert(err.message);
+  }
+}
+
+// ---------------- Detalle de un día (modalidad + cargas de ese día) ----------------
+
+async function abrirDetalleDia(fecha) {
+  document.getElementById('modalCuposDiaTitulo').textContent = cuposFechaLarga(fecha);
+  document.getElementById('modalCuposDiaSub').textContent = '';
+  abrirModalCupos('modalCuposDia');
+  const cuerpo = document.getElementById('modalCuposDiaCuerpo');
+  cuerpo.innerHTML = '<div class="aviso-caja warn">Cargando…</div>';
+  try {
+    const res = await fetch('/api/cupos/dia/' + fecha, { credentials: 'same-origin' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error');
+    renderDetalleDia(data);
+  } catch (err) {
+    cuerpo.innerHTML = `<div class="aviso-caja crit">${err.message}</div>`;
+  }
+}
+
+function renderDetalleDia(dia) {
+  const cuerpo = document.getElementById('modalCuposDiaCuerpo');
+  const modalidadControl = `
+    <div class="modalidad-control">
+      <label for="ddModalidad" style="font-size:12px;font-weight:700;color:var(--text-secondary);">Modalidad del día:</label>
+      <select class="input" id="ddModalidad">
+        <option value="">— sin configurar —</option>
+        <option value="A" ${dia.camion.modalidad === 'A' ? 'selected' : ''}>A (6 camiones, sin carros)</option>
+        <option value="B" ${dia.camion.modalidad === 'B' ? 'selected' : ''}>B (4 camiones + 4 carros)</option>
+      </select>
+      <button type="button" class="btn-secondary" id="ddGuardarModalidad">Guardar</button>
+    </div>
+    <div id="ddModalidadAviso"></div>`;
+
+  const gauges = dia.camion.modalidad ? `
+    <div class="kpi-row cols-2" style="padding:0;margin-bottom:16px;">
+      <div class="kpi"><div class="label">Camiones</div><div class="value">${dia.camion.ocupados} <span class="unit">/ ${dia.camion.maximo}</span></div></div>
+      <div class="kpi"><div class="label">Carros</div><div class="value">${dia.carro.ocupados} <span class="unit">/ ${dia.carro.maximo}</span></div></div>
+    </div>` : '';
+
+  const filas = dia.cargas.length ? dia.cargas.map(c => `<tr>
+      <td>${c.pedido}</td><td>${c.cliente || '—'}</td><td>${c.tipo_equipo === 'camion' ? 'Camión' : 'Carro'}</td>
+      <td>${c.patente || '—'}</td><td><span class="status-badge ${CUPOS_ESTADO_BADGE[c.estado]}">${CUPOS_ESTADO_LABEL[c.estado]}</span></td>
+      <td>${filaAccionesCarga(c)}</td>
+    </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">Sin cargas programadas este día</td></tr>';
+
+  cuerpo.innerHTML = `
+    ${modalidadControl}
+    ${gauges}
+    <div class="table-scroll">
+      <table class="data-table wide-left">
+        <thead><tr><th>Pedido</th><th>Cliente</th><th>Equipo</th><th>Patente</th><th>Estado</th><th></th></tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+    </div>`;
+
+  document.getElementById('ddGuardarModalidad').addEventListener('click', async () => {
+    const nueva = document.getElementById('ddModalidad').value;
+    const aviso = document.getElementById('ddModalidadAviso');
+    if (!nueva) { aviso.innerHTML = '<div class="aviso-caja warn">Elegí A o B.</div>'; return; }
+    try {
+      const res = await fetch('/api/cupos/modalidad', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+        body: JSON.stringify({ fecha: dia.fecha, modalidad: nueva }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error');
+      if (!data.ok) {
+        aviso.innerHTML = `<div class="aviso-caja crit">No se puede cambiar a modalidad ${nueva}: hay cargas que no entran.<ul>${
+          data.bloqueos.map(b => `<li>${b.pedido} — ${b.tipo_equipo === 'camion' ? 'camión' : 'carro'} (${CUPOS_ESTADO_LABEL[b.estado]})</li>`).join('')
+        }</ul></div>`;
+        return;
+      }
+      aviso.innerHTML = '<div class="aviso-caja ok">Modalidad actualizada.</div>';
+      await abrirDetalleDia(dia.fecha);
+      await cargarCuposSemana();
+    } catch (err) {
+      aviso.innerHTML = `<div class="aviso-caja crit">${err.message}</div>`;
+    }
+  });
+}
+
+// ---------------- Historial (por carga y general) ----------------
+
+function filaHistorialCupos(h, conPedido) {
+  const de = (h.fecha_anterior || '—') + (h.estado_anterior ? ' · ' + (CUPOS_ESTADO_LABEL[h.estado_anterior] || h.estado_anterior) : '');
+  const a = (h.fecha_nueva || '—') + (h.estado_nuevo ? ' · ' + (CUPOS_ESTADO_LABEL[h.estado_nuevo] || h.estado_nuevo) : '');
+  return `<tr>
+    <td>${new Date(h.created_at).toLocaleString('es-AR')}</td>
+    ${conPedido ? `<td>${h.pedido}</td>` : ''}
+    <td>${CUPOS_MOVIMIENTO_LABEL[h.tipo_movimiento] || h.tipo_movimiento}</td>
+    <td>${de}</td><td>${a}</td>
+    <td>${h.usuario_nombre || h.usuario_usuario || '—'}</td>
+    <td>${h.detalle || '—'}</td>
+  </tr>`;
+}
+
+async function abrirHistorialCarga(id) {
+  document.getElementById('modalCuposHistCargaSub').textContent = '';
+  abrirModalCupos('modalCuposHistCarga');
+  const cuerpo = document.getElementById('modalCuposHistCargaCuerpo');
+  cuerpo.innerHTML = '<div class="aviso-caja warn">Cargando…</div>';
+  try {
+    const res = await fetch('/api/cupos/cargas/' + id + '/historial', { credentials: 'same-origin' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error');
+    cuerpo.innerHTML = data.length ? `<div class="table-scroll"><table class="data-table wide-left">
+        <thead><tr><th>Fecha/hora</th><th>Movimiento</th><th>De</th><th>A</th><th>Usuario</th><th>Detalle</th></tr></thead>
+        <tbody>${data.map(h => filaHistorialCupos(h, false)).join('')}</tbody>
+      </table></div>` : '<div class="aviso-caja warn">Sin movimientos registrados.</div>';
+  } catch (err) {
+    cuerpo.innerHTML = `<div class="aviso-caja crit">${err.message}</div>`;
+  }
+}
+
+async function cargarCuposHistorial() {
+  const tbody = document.getElementById('cuposTablaHistorial');
+  try {
+    const res = await fetch('/api/cupos/historial?limite=40', { credentials: 'same-origin' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error');
+    tbody.innerHTML = data.map(h => filaHistorialCupos(h, true)).join('')
+      || '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);">Todavía no hay movimientos</td></tr>';
+  } catch (err) {
+    console.error(err);
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--critical);">Error al cargar</td></tr>';
+  }
+}
+
+cargarPanel();
+
+</script>
+</body>
+</html>
