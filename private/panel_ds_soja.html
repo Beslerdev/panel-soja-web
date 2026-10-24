@@ -483,6 +483,7 @@ panel_ds_soja.html<!DOCTYPE html>
   .dia-gauge-label { width: 56px; flex-shrink: 0; color: var(--text-secondary); font-weight: 600; }
   .dia-cargas-mini { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
   .dia-carga-chip { font-size: 11px; color: var(--text-secondary); padding: 4px 8px; border-radius: 8px; background: var(--page-plane); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chip-auto { font-size: 9.5px; font-weight: 700; color: var(--accent-text); border: 1px solid var(--accent); border-radius: 8px; padding: 1px 5px; margin-left: 4px; vertical-align: middle; }
   .dia-carga-mas { font-size: 10.5px; color: var(--text-muted); padding: 0 8px; }
   .dia-vacio { font-size: 11.5px; color: var(--text-muted); padding: 4px 0; }
 
@@ -2032,7 +2033,7 @@ function diaCardHtml(dia) {
   const cargasVisibles = dia.cargas.slice(0, 3);
   const extra = dia.cargas.length - cargasVisibles.length;
   const miniCargas = dia.cargas.length
-    ? cargasVisibles.map(c => `<div class="dia-carga-chip">${c.pedido} · ${c.tipo_equipo === 'camion' ? 'Camión' : 'Carro'}</div>`).join('')
+    ? cargasVisibles.map(c => `<div class="dia-carga-chip">${c.pedido} · ${c.tipo_equipo === 'camion' ? 'Camión' : 'Carro'}${c.origen === 'despacho' ? ' <span class="chip-auto" title="Importado automáticamente desde Despachos">auto</span>' : ''}</div>`).join('')
       + (extra > 0 ? `<div class="dia-carga-mas">+${extra} más</div>` : '')
     : '<div class="dia-vacio">Sin cargas programadas</div>';
   return `<div class="dia-card" data-estado="${estado}" data-fecha="${dia.fecha}">
@@ -2138,7 +2139,7 @@ function filaAccionesCarga(c) {
 
 function filaCuposCarga(c) {
   return `<tr>
-    <td>${c.pedido}</td><td>${c.cliente || '—'}</td><td>${c.producto || '—'}</td>
+    <td>${c.pedido}${c.origen === 'despacho' ? ' <span class="chip-auto" title="Importado automáticamente desde Despachos">auto</span>' : ''}</td><td>${c.cliente || '—'}</td><td>${c.producto || '—'}</td>
     <td>${c.tipo_equipo === 'camion' ? 'Camión' : 'Carro'}</td><td>${c.patente || '—'}</td>
     <td>${c.fecha_deseada || '—'}</td><td>${c.fecha_asignada || '—'}</td>
     <td>${c.usuario_nombre || c.usuario_usuario || '—'}</td>
