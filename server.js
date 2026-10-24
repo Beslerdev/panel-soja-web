@@ -5,6 +5,7 @@ const express = require('express');
 const session = require('express-session');
 const { createClient } = require('@supabase/supabase-js');
 const { transformRows } = require('./lib/transform');
+const { crearServicioCupos, hoyISO, lunesDeSemana } = require('./lib/cupos');
 
 const {
   SUPABASE_URL,
@@ -30,6 +31,8 @@ const supabaseAuth = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
 });
+
+const cupos = crearServicioCupos(supabaseAdmin);
 
 const EMAIL_DOMAIN = '@panel-soja.local';
 
@@ -136,6 +139,198 @@ app.get('/api/data', requireAuthApi, async (req, res) => {
     res.status(500).json({ error: 'Error al leer los datos de Supabase' });
   }
 });
+
+// ---------------- Cupos y programación de camiones/carros ----------------
+
+const FECHA_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+// Envuelve un handler async: cualquier error se devuelve como
+// { error: mensaje } con 400 (son validaciones de negocio, con mensajes en
+// español ya listos para mostrar), salvo que sea un error realmente
+// inesperado del servidor, que loguea y devuelve 500.
+function rutaCupos(fn) {
+  return (req, res) => {
+    fn(req, res).catch((err) => {
+      console.error('[cupos]', err && err.message ? err.message : err);
+      res.status(400).json({ error: (err && err.message) || 'Error inesperado' });
+    });
+  };
+}
+
+function usuarioDeSesion(req) {
+  const u = req.session.user || {};
+  return { usuario: u.usuario, nombre: u.nombre_completo };
+}
+
+// Resumen semanal para el panel de 6 tarjetas (lunes a sábado).
+app.get(
+  '/api/cupos/semana',
+  requireAuthApi,
+  rutaCupos(async (req, res) => {
+    const lunes = req.query.lunes && FECHA_RE.test(req.query.lunes) ? req.query.lunes : lunesDeSemana(hoyISO());
+    const data = await cupos.resumenSemana(lunes);
+    res.json(data);
+  })
+);
+
+// Detalle de un día puntual (modalidad, capacidad de camión y carro, cargas).
+app.get(
+  '/api/cupos/dia/:fecha',
+  requireAuthApi,
+  rutaCupos(async (req, res) => {
+    if (!FECHA_RE.test(req.params.fecha)) return res.status(400).json({ error: 'Fecha inválida' });
+    const data = await cupos.obtenerDia(req.params.fecha);
+    res.json(data);
+  })
+);
+
+// Capacidad de un rango de fechas (para una vista de calendario / disponibilidad rápida).
+app.get(
+  '/api/cupos/disponibilidad',
+  requireAuthApi,
+  rutaCupos(async (req, res) => {
+    const { desde, hasta } = req.query;
+    if (!FECHA_RE.test(desde || '') || !FECHA_RE.test(hasta || '')) {
+      return res.status(400).json({ error: 'Parámetros "desde" y "hasta" (YYYY-MM-DD) requeridos' });
+    }
+    const data = await cupos.capacidadRango(desde, hasta);
+    res.json(data);
+  })
+);
+
+// Listado de cargas (con filtros opcionales por estado, pedido y rango de fecha asignada).
+app.get(
+  '/api/cupos/cargas',
+  requireAuthApi,
+  rutaCupos(async (req, res) => {
+    const { estado, pedido, desde, hasta } = req.query;
+    const data = await cupos.listarCargas({ estado, pedido, fechaDesde: desde, fechaHasta: hasta });
+    res.json(data);
+  })
+);
+
+// Alta de una nueva carga (queda en estado "pendiente de programación").
+app.post(
+  '/api/cupos/cargas',
+  requireAuthApi,
+  rutaCupos(async (req, res) => {
+    const { usuario, nombre } = usuarioDeSesion(req);
+    const { pedido, cliente, producto, tipoEquipo, patente, fechaDeseada, observaciones } = req.body || {};
+    const data = await cupos.crearCarga({ pedido, cliente, producto, tipoEquipo, patente, fechaDeseada, observaciones, usuario, nombre });
+    res.json(data);
+  })
+);
+
+// Historial reciente de movimientos (todas las cargas, el más nuevo primero).
+app.get(
+  '/api/cupos/historial',
+  requireAuthApi,
+  rutaCupos(async (req, res) => {
+    const limite = Math.min(parseInt(req.query.limite, 10) || 100, 500);
+    const data = await cupos.historialReciente(limite);
+    res.json(data);
+  })
+);
+
+// Cambia (o fija por primera vez) la modalidad de un día. Si hay cargas que
+// no entrarían en la nueva capacidad, no cambia nada: devuelve { ok:false,
+// bloqueos:[...] } con el detalle de qué cargas lo impiden.
+app.post(
+  '/api/cupos/modalidad',
+  requireAuthApi,
+  rutaCupos(async (req, res) => {
+    const { usuario, nombre } = usuarioDeSesion(req);
+    const { fecha, modalidad } = req.body || {};
+    if (!FECHA_RE.test(fecha || '')) return res.status(400).json({ error: 'Fecha inválida' });
+    const data = await cupos.cambiarModalidad({ fecha, modalidad, usuario, nombre });
+    res.json(data);
+  })
+);
+
+// Detalle de una carga puntual.
+app.get(
+  '/api/cupos/cargas/:id',
+  requireAuthApi,
+  rutaCupos(async (req, res) => {
+    const data = await cupos.obtenerCarga(req.params.id);
+    res.json(data);
+  })
+);
+
+// Historial de una carga puntual.
+app.get(
+  '/api/cupos/cargas/:id/historial',
+  requireAuthApi,
+  rutaCupos(async (req, res) => {
+    const data = await cupos.historialCarga(req.params.id);
+    res.json(data);
+  })
+);
+
+// Paso 1 de la asignación: solo lectura. Busca si la fecha pedida tiene
+// cupo; si no, propone la próxima fecha disponible (sin escribir nada
+// todavía — hace falta "confirmar" para que se guarde de verdad).
+app.post(
+  '/api/cupos/cargas/:id/proponer',
+  requireAuthApi,
+  rutaCupos(async (req, res) => {
+    const { fechaDeseada } = req.body || {};
+    const data = await cupos.proponerAsignacion({ cargaId: req.params.id, fechaDeseada });
+    res.json(data);
+  })
+);
+
+// Paso 2: confirma y escribe. El servidor vuelve a validar la disponibilidad
+// en el momento de confirmar (dentro de cupos_asignar, con lock por fecha),
+// así que si cambió algo entre proponer y confirmar, esto falla con un
+// mensaje claro en vez de sobre-ocupar el día.
+app.post(
+  '/api/cupos/cargas/:id/confirmar',
+  requireAuthApi,
+  rutaCupos(async (req, res) => {
+    const { usuario, nombre } = usuarioDeSesion(req);
+    const { fecha } = req.body || {};
+    if (!FECHA_RE.test(fecha || '')) return res.status(400).json({ error: 'Fecha inválida' });
+    const data = await cupos.confirmarAsignacion({ cargaId: req.params.id, fecha, usuario, nombre });
+    res.json(data);
+  })
+);
+
+// Cancela una carga programada o pendiente.
+app.post(
+  '/api/cupos/cargas/:id/cancelar',
+  requireAuthApi,
+  rutaCupos(async (req, res) => {
+    const { usuario, nombre } = usuarioDeSesion(req);
+    const { motivo } = req.body || {};
+    const data = await cupos.cancelar({ cargaId: req.params.id, usuario, nombre, motivo });
+    res.json(data);
+  })
+);
+
+// Marca una carga programada como despachada.
+app.post(
+  '/api/cupos/cargas/:id/despachar',
+  requireAuthApi,
+  rutaCupos(async (req, res) => {
+    const { usuario, nombre } = usuarioDeSesion(req);
+    const data = await cupos.despachar({ cargaId: req.params.id, usuario, nombre });
+    res.json(data);
+  })
+);
+
+// Reapertura explícita de una carga cancelada o despachada (la única forma
+// de volver a programarla, tal como pide el enunciado).
+app.post(
+  '/api/cupos/cargas/:id/reabrir',
+  requireAuthApi,
+  rutaCupos(async (req, res) => {
+    const { usuario, nombre } = usuarioDeSesion(req);
+    const { motivo } = req.body || {};
+    const data = await cupos.reabrir({ cargaId: req.params.id, usuario, nombre, motivo });
+    res.json(data);
+  })
+);
 
 // ---------------- Páginas ----------------
 
