@@ -227,6 +227,8 @@
      disponible al pasar el mouse (title). Solo en la tabla principal — en la
      ventana "Pedidos a confirmar" (más ancha) no hace falta. */
   #tablaDespacho td:nth-child(2) { max-width: 190px; overflow: hidden; text-overflow: ellipsis; }
+  #cuposTablaCargas td:nth-child(2) { max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+  #modalCuposDiaCuerpo td:nth-child(2) { max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
   .table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
   .table-scroll.max-h { max-height: 480px; overflow-y: auto; }
   .table-scroll.max-h thead th { position: sticky; top: 0; z-index: 1; }
@@ -2140,7 +2142,7 @@ function filaAccionesCarga(c) {
 
 function filaCuposCarga(c) {
   return `<tr>
-    <td>${c.pedido}${c.origen === 'despacho' ? ' <span class="chip-auto" title="Importado automáticamente desde Despachos">auto</span>' : ''}</td><td>${c.cliente || '—'}</td><td>${c.producto || '—'}</td>
+    <td>${c.pedido}${c.origen === 'despacho' ? ' <span class="chip-auto" title="Importado automáticamente desde Despachos">auto</span>' : ''}</td><td title="${c.cliente || ''}">${c.cliente || '—'}</td><td>${c.producto || '—'}</td>
     <td>${c.tipo_equipo === 'camion' ? 'Camión' : 'Carro'}</td><td>${c.patente || '—'}</td>
     <td>${c.fecha_deseada || '—'}</td><td>${c.fecha_asignada || '—'}</td>
     <td>${c.usuario_nombre || c.usuario_usuario || '—'}</td>
@@ -2327,7 +2329,7 @@ function renderDetalleDia(dia) {
     </div>` : '';
 
   const filas = dia.cargas.length ? dia.cargas.map(c => `<tr>
-      <td>${c.pedido}</td><td>${c.cliente || '—'}</td><td>${c.tipo_equipo === 'camion' ? 'Camión' : 'Carro'}</td>
+      <td>${c.pedido}</td><td title="${c.cliente || ''}">${c.cliente || '—'}</td><td>${c.tipo_equipo === 'camion' ? 'Camión' : 'Carro'}</td>
       <td>${c.patente || '—'}</td><td><span class="status-badge ${CUPOS_ESTADO_BADGE[c.estado]}">${CUPOS_ESTADO_LABEL[c.estado]}</span></td>
       <td>${filaAccionesCarga(c)}</td>
     </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">Sin cargas programadas este día</td></tr>';
