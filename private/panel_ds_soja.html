@@ -462,30 +462,39 @@
   @media (max-width: 860px) { .dia-grid { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 560px) { .dia-grid { grid-template-columns: 1fr; } }
   .dia-card {
-    cursor: pointer; background: var(--surface-1); border: 1px solid var(--border); border-radius: 16px;
+    cursor: pointer; background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px;
     padding: 16px 16px 14px; box-shadow: var(--card-shadow); transition: box-shadow .18s ease, transform .18s ease;
-    border-left: 4px solid var(--text-muted);
+    border-left: 4px solid var(--text-muted); display: flex; flex-direction: column;
   }
   .dia-card:hover { box-shadow: var(--card-shadow-hover); transform: translateY(-2px); }
   .dia-card[data-estado="verde"] { border-left-color: var(--good); }
   .dia-card[data-estado="amarillo"] { border-left-color: var(--warning); }
-  .dia-card[data-estado="rojo"] { border: 2px solid var(--critical); background: color-mix(in srgb, var(--critical) 12%, var(--surface-1)); }
+  .dia-card[data-estado="naranja"] { border-left-color: var(--series-1); background: color-mix(in srgb, var(--series-1) 5%, var(--surface-1)); }
+  .dia-card[data-estado="rojo"] { border-left-color: var(--critical); background: color-mix(in srgb, var(--critical) 7%, var(--surface-1)); }
   .dia-card[data-estado="gris"] { border-left-color: var(--text-muted); opacity: .78; }
+  .dia-card[data-estado="vencido"] { border-left-color: var(--critical); background: color-mix(in srgb, var(--critical) 7%, var(--surface-1)); }
+  .dia-card[data-estado="pasado"] { border-left-color: var(--text-muted); opacity: .66; }
   .dia-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
   .dia-nombre { font-size: 14px; font-weight: 700; text-transform: capitalize; color: var(--text-primary); }
   .dia-fecha { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
-  .dia-badge { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 12px; white-space: nowrap; }
+  .dia-badge { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 12px; white-space: nowrap; text-transform: uppercase; letter-spacing: .03em; flex-shrink: 0; }
   .dia-badge.verde { color: var(--good-text); background: color-mix(in srgb, var(--good) 16%, var(--surface-1)); }
   .dia-badge.amarillo { color: var(--warning); background: color-mix(in srgb, var(--warning) 16%, var(--surface-1)); }
+  .dia-badge.naranja { color: var(--series-1); background: color-mix(in srgb, var(--series-1) 16%, var(--surface-1)); }
   .dia-badge.rojo { color: var(--critical); background: color-mix(in srgb, var(--critical) 16%, var(--surface-1)); }
   .dia-badge.gris { color: var(--text-muted); background: var(--page-plane); }
+  .dia-badge.vencido { color: var(--critical); background: color-mix(in srgb, var(--critical) 16%, var(--surface-1)); }
+  .dia-badge.pasado { color: var(--text-muted); background: var(--page-plane); }
   .dia-modalidad { font-size: 11.5px; color: var(--text-secondary); margin-bottom: 8px; }
   .dia-sin-modalidad { font-size: 12px; color: var(--text-muted); font-style: italic; padding: 10px 0; }
   .dia-sin-modalidad-chip { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; }
   .dia-gauge { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 11.5px; }
   .dia-gauge-label { width: 56px; flex-shrink: 0; color: var(--text-secondary); font-weight: 600; }
+  .dia-alerta-reprogramar { font-size: 12px; font-weight: 600; color: var(--critical); background: color-mix(in srgb, var(--critical) 10%, var(--surface-1)); border-radius: 10px; padding: 8px 10px; margin-bottom: 4px; }
+  .dia-resumen-pasado { font-size: 12px; color: var(--text-muted); padding: 2px 0 4px; }
   .dia-cargas-mini { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
   .dia-carga-chip { font-size: 11px; color: var(--text-secondary); padding: 4px 8px; border-radius: 8px; background: var(--page-plane); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dia-carga-chip.alerta { color: var(--critical); background: color-mix(in srgb, var(--critical) 10%, var(--surface-1)); font-weight: 600; }
   .chip-auto { font-size: 9.5px; font-weight: 700; color: var(--accent-text); border: 1px solid var(--accent); border-radius: 8px; padding: 1px 5px; margin-left: 4px; vertical-align: middle; }
   .dia-carga-mas { font-size: 10.5px; color: var(--text-muted); padding: 0 8px; }
   .dia-vacio { font-size: 11.5px; color: var(--text-muted); padding: 4px 0; }
@@ -1960,7 +1969,7 @@ let CUPOS_FILTRO_ESTADO = 'pendiente';
 let CUPOS_CARGA_PROPONER = null; // { id, pedido, tipoEquipo }
 
 const CUPOS_NOMBRES_DIA = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
-const CUPOS_ETIQUETA_ESTADO_DIA = { verde:'Disponible', amarillo:'Pocos cupos', rojo:'Completo', gris:'Sin configurar' };
+const CUPOS_ETIQUETA_ESTADO_DIA = { verde:'Disponible', amarillo:'Pocos cupos', naranja:'Casi completo', rojo:'Completo', gris:'Sin configurar', vencido:'Para reprogramar', pasado:'Día pasado' };
 const CUPOS_ESTADO_BADGE = { pendiente:'warn', programado:'info', despachado:'ok', cancelado:'crit' };
 const CUPOS_ESTADO_LABEL = { pendiente:'Pendiente', programado:'Programado', despachado:'Despachado', cancelado:'Cancelado' };
 const CUPOS_MOVIMIENTO_LABEL = {
@@ -2011,6 +2020,11 @@ async function cargarCuposSemana() {
 }
 
 function colorDia(dia) {
+  const hoy = cuposHoyISO();
+  if (dia.fecha < hoy) {
+    const pendientes = dia.cargas.filter(c => c.estado === 'programado').length;
+    return pendientes > 0 ? 'vencido' : 'pasado';
+  }
   const partes = [];
   if (dia.camion.maximo > 0) partes.push(dia.camion);
   if (dia.carro.maximo > 0) partes.push(dia.carro);
@@ -2018,7 +2032,9 @@ function colorDia(dia) {
   const disponibleTotal = partes.reduce((s, p) => s + p.disponibles, 0);
   if (disponibleTotal <= 0) return 'rojo';
   const peorFraccion = Math.max(...partes.map(p => p.ocupados / p.maximo));
-  return peorFraccion >= 0.8 ? 'amarillo' : 'verde';
+  if (peorFraccion >= 0.8) return 'naranja';
+  if (peorFraccion >= 0.6) return 'amarillo';
+  return 'verde';
 }
 
 function cuposGaugeHtml(label, obj) {
@@ -2029,6 +2045,9 @@ function cuposGaugeHtml(label, obj) {
 }
 
 function diaCardHtml(dia) {
+  const hoy = cuposHoyISO();
+  const esPasado = dia.fecha < hoy;
+  const pendientesReprogramar = esPasado ? dia.cargas.filter(c => c.estado === 'programado').length : 0;
   const estado = colorDia(dia);
   const fechaObj = new Date(dia.fecha + 'T00:00:00Z');
   const nombreDia = CUPOS_NOMBRES_DIA[fechaObj.getUTCDay()];
@@ -2036,19 +2055,25 @@ function diaCardHtml(dia) {
   const cargasVisibles = dia.cargas.slice(0, 3);
   const extra = dia.cargas.length - cargasVisibles.length;
   const miniCargas = dia.cargas.length
-    ? cargasVisibles.map(c => `<div class="dia-carga-chip">${c.pedido} · ${c.tipo_equipo === 'camion' ? 'Camión' : 'Carro'}${c.origen === 'despacho' ? ' <span class="chip-auto" title="Importado automáticamente desde Despachos">auto</span>' : ''}</div>`).join('')
+    ? cargasVisibles.map(c => `<div class="dia-carga-chip${esPasado && c.estado === 'programado' ? ' alerta' : ''}">${c.pedido} · ${c.tipo_equipo === 'camion' ? 'Camión' : 'Carro'}${c.origen === 'despacho' ? ' <span class="chip-auto" title="Importado automáticamente desde Despachos">auto</span>' : ''}</div>`).join('')
       + (extra > 0 ? `<div class="dia-carga-mas">+${extra} más</div>` : '')
     : '<div class="dia-vacio">Sin cargas programadas</div>';
+  const totalDia = dia.camion.ocupados + dia.carro.ocupados;
+  const cuerpo = esPasado
+    ? (pendientesReprogramar > 0
+        ? `<div class="dia-alerta-reprogramar">${pendientesReprogramar} camión${pendientesReprogramar === 1 ? '' : 'es'} sin despachar — para reprogramar</div>`
+        : `<div class="dia-resumen-pasado">${totalDia > 0 ? totalDia + ' despachado' + (totalDia === 1 ? '' : 's') : 'Sin cargas registradas'}</div>`)
+    : `${dia.modalidad
+        ? `<div class="dia-modalidad">Modalidad <b>${dia.modalidad}</b></div>`
+        : `<div class="dia-sin-modalidad-chip">Cupo por defecto (6 camiones) — clic para fijar modalidad</div>`}
+      ${cuposGaugeHtml('Camiones', dia.camion)}
+      ${dia.modalidad === 'B' ? cuposGaugeHtml('Carros', dia.carro) : ''}`;
   return `<div class="dia-card" data-estado="${estado}" data-fecha="${dia.fecha}">
     <div class="dia-head">
       <div><div class="dia-nombre">${nombreDia}</div><div class="dia-fecha">${fechaCorta}</div></div>
       <span class="dia-badge ${estado}">${CUPOS_ETIQUETA_ESTADO_DIA[estado]}</span>
     </div>
-    ${dia.modalidad
-      ? `<div class="dia-modalidad">Modalidad <b>${dia.modalidad}</b></div>`
-      : `<div class="dia-sin-modalidad-chip">Cupo por defecto (6 camiones) — clic para fijar modalidad</div>`}
-    ${cuposGaugeHtml('Camiones', dia.camion)}
-    ${dia.modalidad === 'B' ? cuposGaugeHtml('Carros', dia.carro) : ''}
+    ${cuerpo}
     <div class="dia-cargas-mini">${miniCargas}</div>
   </div>`;
 }
