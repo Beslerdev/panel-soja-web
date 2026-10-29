@@ -58,8 +58,29 @@ function requireAuthPage(req, res, next) {
   return res.redirect('/login.html');
 }
 
+// Sincroniza Cupos desde Despachos automáticamente, sin depender de que
+// alguien la corra a mano: se dispara sola en cada llamada autenticada a la
+// API (cualquier uso del panel), con un margen de 60s entre corridas para no
+// pegarle a Supabase en cada click. Si falla, no bloquea la respuesta real:
+// solo queda logueado en la consola del servidor (Render).
+let ultimoSyncCupos = 0;
+async function sincronizarCuposSiCorresponde() {
+  const ahora = Date.now();
+  if (ahora - ultimoSyncCupos < 60_000) return;
+  ultimoSyncCupos = ahora;
+  try {
+    const { error } = await supabaseAdmin.rpc('cupos_sincronizar_desde_despachos');
+    if (error) console.error('[cupos-sync-auto]', error.message);
+  } catch (err) {
+    console.error('[cupos-sync-auto]', err && err.message ? err.message : err);
+  }
+}
+
 function requireAuthApi(req, res, next) {
-  if (req.session && req.session.user) return next();
+  if (req.session && req.session.user) {
+    sincronizarCuposSiCorresponde().finally(next);
+    return;
+  }
   return res.status(401).json({ error: 'No autenticado' });
 }
 
