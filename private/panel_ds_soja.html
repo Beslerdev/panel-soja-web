@@ -131,6 +131,12 @@
   }
   .area-head p { font-size: 13.5px; color: var(--text-secondary); margin: 7px 0 0; }
 
+  .area-head-row {
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;
+    gap: 12px; margin: 26px 0 22px; padding: 0 24px;
+  }
+  .area-head-row .area-head { margin: 0; padding: 0; }
+
   .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 22px; padding: 0 24px; }
   .kpi-row.cols-4 { grid-template-columns: repeat(4, 1fr); }
   .kpi-row.cols-6 { grid-template-columns: repeat(6, 1fr); }
@@ -835,10 +841,12 @@
 
   <!-- ===================== OFERTA ===================== -->
   <section class="view active" id="view-oferta">
-    <div class="area-head"><div class="eyebrow">ÁREA 01</div><h1>Oferta</h1><p>Oferta, venta y disponible por variedad — en bolsas</p></div>
-    <div class="modalidad-control">
-      <label for="selectOfertaFecha" style="font-size:13px;color:var(--text-secondary);">Ver datos de:</label>
-      <select class="input" id="selectOfertaFecha"></select>
+    <div class="area-head-row">
+      <div class="area-head"><div class="eyebrow">ÁREA 01</div><h1>Oferta</h1><p>Oferta, venta y disponible por variedad — en bolsas</p></div>
+      <div class="modalidad-control">
+        <label for="selectOfertaFecha" style="font-size:13px;color:var(--text-secondary);">Ver datos de:</label>
+        <select class="input" id="selectOfertaFecha"></select>
+      </div>
     </div>
     <div class="kpi-row" id="kpiOferta"></div>
 
