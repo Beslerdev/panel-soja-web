@@ -126,13 +126,26 @@ async function buildPanelData() {
     'lotes_curado',
     'calendario_produccion',
     'oferta_variedades',
+    'oferta_variedades_historial',
   ];
+
+  // Tablas "opcionales": si todavía no existen en Supabase no rompen el resto
+  // del panel, solo quedan vacías. Hoy es el caso de oferta_variedades_historial
+  // (histórico de Oferta) hasta que se corra su migración.
+  const TABLAS_OPCIONALES = new Set(['oferta_variedades_historial']);
 
   const results = {};
   let ultimaCarga = null;
   for (const t of tables) {
     const { data, error } = await supabaseAdmin.from(t).select('*');
-    if (error) throw new Error(`Error leyendo ${t}: ${error.message}`);
+    if (error) {
+      if (TABLAS_OPCIONALES.has(t)) {
+        console.error(`[tabla-opcional] ${t}: ${error.message}`);
+        results[t] = [];
+        continue;
+      }
+      throw new Error(`Error leyendo ${t}: ${error.message}`);
+    }
     results[t] = data || [];
     for (const fila of results[t]) {
       if (!fila.created_at) continue;
