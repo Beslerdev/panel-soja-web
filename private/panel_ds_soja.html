@@ -836,6 +836,10 @@
   <!-- ===================== OFERTA ===================== -->
   <section class="view active" id="view-oferta">
     <div class="area-head"><div class="eyebrow">ÁREA 01</div><h1>Oferta</h1><p>Oferta, venta y disponible por variedad — en bolsas</p></div>
+    <div class="modalidad-control">
+      <label for="selectOfertaFecha" style="font-size:13px;color:var(--text-secondary);">Ver datos de:</label>
+      <select class="input" id="selectOfertaFecha"></select>
+    </div>
     <div class="kpi-row" id="kpiOferta"></div>
 
     <div class="panel">
@@ -1528,15 +1532,28 @@ function renderAll() {
   }).join('');
 
   // ================= OFERTA =================
-  const pctDisponibleOferta = DATA.kpi_oferta.total_oferta
-    ? (DATA.kpi_oferta.total_disponible / DATA.kpi_oferta.total_oferta) * 100 : 0;
+  poblarSelectorOfertaFecha();
+  renderOferta(DATA.oferta, DATA.kpi_oferta);
+
+  renderVencidos();
+
+  animateCountUp();
+  sincronizarFiltros();
+}
+
+// Dibuja los KPIs, el gráfico y la tabla de la solapa Oferta a partir de un
+// set de filas: el actual (DATA.oferta/DATA.kpi_oferta) o una foto del
+// histórico elegida en el selector "Ver datos de".
+function renderOferta(ofertaRows, kpi) {
+  const pctDisponibleOferta = kpi.total_oferta
+    ? (kpi.total_disponible / kpi.total_oferta) * 100 : 0;
   document.getElementById('kpiOferta').innerHTML = [
-    kpiCard('Oferta total', DATA.kpi_oferta.total_oferta, {unit:' Bls', note: 'repartidas en ' + DATA.kpi_oferta.variedades + ' variedades', icon:'package'}),
-    kpiCard('Venta total', DATA.kpi_oferta.total_venta, {unit:' Bls', note: fmt1(DATA.kpi_oferta.pct_vendido) + '% de la oferta vendida', icon:'trending-up'}),
-    kpiCard('Disponible', DATA.kpi_oferta.total_disponible, {unit:' Bls', note: fmt1(pctDisponibleOferta) + '% de la oferta aún disponible', icon:'layers'}),
+    kpiCard('Oferta total', kpi.total_oferta, {unit:' Bls', note: 'repartidas en ' + kpi.variedades + ' variedades', icon:'package'}),
+    kpiCard('Venta total', kpi.total_venta, {unit:' Bls', note: fmt1(kpi.pct_vendido) + '% de la oferta vendida', icon:'trending-up'}),
+    kpiCard('Disponible', kpi.total_disponible, {unit:' Bls', note: fmt1(pctDisponibleOferta) + '% de la oferta aún disponible', icon:'layers'}),
   ].join('');
 
-  const ofertaOrdenada = DATA.oferta.slice().sort((a,b) => b.venta - a.venta);
+  const ofertaOrdenada = ofertaRows.slice().sort((a,b) => b.venta - a.venta);
   const maxVentaOferta = Math.max(1, ...ofertaOrdenada.map(o => o.venta));
   document.getElementById('chartOferta').innerHTML = ofertaOrdenada.map(o => {
     const width = Math.max(0, (o.venta / maxVentaOferta) * 100);
@@ -1547,8 +1564,8 @@ function renderAll() {
     </div>`;
   }).join('') || '<div class="hbar-row"><div class="hbar-label" style="color:var(--text-muted);">Sin datos todavía</div></div>';
 
-  document.getElementById('captionOfertaTabla').textContent = DATA.oferta.length + ' variedades';
-  document.getElementById('tablaOferta').innerHTML = DATA.oferta.map(o => {
+  document.getElementById('captionOfertaTabla').textContent = ofertaRows.length + ' variedades';
+  document.getElementById('tablaOferta').innerHTML = ofertaRows.map(o => {
     const share = o.oferta > 0 ? Math.min(100, (o.venta / o.oferta) * 100) : 0;
     return `<tr>
       <td>${o.semillero || '—'}</td><td>${o.variedad}</td>
@@ -1556,11 +1573,31 @@ function renderAll() {
       <td class="num"><div class="mini-bar"><div class="track"><div class="fill" style="width:${share.toFixed(1)}%"></div></div><span class="pct">${fmt1(share)}%</span></div></td>
     </tr>`;
   }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">Sin datos de oferta cargados todavía</td></tr>';
+}
 
-  renderVencidos();
-
-  animateCountUp();
-  sincronizarFiltros();
+// Selector "Ver datos de" de la solapa Oferta: "Actual (hoy)" + cada foto
+// guardada en el histórico (DATA.oferta_historial, armado en
+// lib/transform.js a partir de oferta_variedades_historial — se llena sola
+// cada vez que se reimporta ventas.xlsx, sin que haga falta tocar nada acá).
+// Se repuebla en cada renderAll() porque el histórico puede sumar una fecha
+// más de un día para otro.
+function poblarSelectorOfertaFecha() {
+  const sel = document.getElementById('selectOfertaFecha');
+  if (!sel) return;
+  const valorPrevio = sel.value;
+  const historial = Array.isArray(DATA.oferta_historial) ? DATA.oferta_historial : [];
+  sel.innerHTML = ['<option value="actual">Actual (hoy)</option>']
+    .concat(historial.map(h => `<option value="${h.fecha}">${new Date(h.fecha + 'T00:00:00').toLocaleDateString('es-AR')}</option>`))
+    .join('');
+  sel.value = Array.from(sel.options).some(o => o.value === valorPrevio) ? valorPrevio : 'actual';
+  if (!sel.dataset.listo) {
+    sel.dataset.listo = '1';
+    sel.addEventListener('change', () => {
+      if (sel.value === 'actual') { renderOferta(DATA.oferta, DATA.kpi_oferta); return; }
+      const foto = (DATA.oferta_historial || []).find(h => h.fecha === sel.value);
+      if (foto) renderOferta(foto.oferta, foto.kpi);
+    });
+  }
 }
 
 // ================= VENCIDOS Y POR VENCER =================
