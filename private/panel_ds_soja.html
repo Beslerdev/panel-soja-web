@@ -1601,9 +1601,13 @@ function poblarSelectorOfertaFecha() {
   if (!sel.dataset.listo) {
     sel.dataset.listo = '1';
     sel.addEventListener('change', () => {
-      if (sel.value === 'actual') { renderOferta(DATA.oferta, DATA.kpi_oferta); return; }
+      // renderOferta() deja cada número de KPI en "0" (kpiCard arranca
+      // siempre en 0 y animateCountUp() es lo que lo anima hasta el valor
+      // real) — sin llamarla de nuevo acá, los KPI quedaban pegados en 0
+      // tanto al elegir una fecha del histórico como al volver a "Actual".
+      if (sel.value === 'actual') { renderOferta(DATA.oferta, DATA.kpi_oferta); animateCountUp(); return; }
       const foto = (DATA.oferta_historial || []).find(h => h.fecha === sel.value);
-      if (foto) renderOferta(foto.oferta, foto.kpi);
+      if (foto) { renderOferta(foto.oferta, foto.kpi); animateCountUp(); }
     });
   }
 }
