@@ -235,7 +235,17 @@ function extractProdFinal(wb) {
 }
 
 function extractDespachos(wb) {
-  const ws = wb.Sheets['Despacho'];
+  // El nombre de esta hoja cambio entre campanas: "Despacho" (hasta la 24/25)
+  // y "DESPACHOS" (campana 25/26 en adelante). Se acepta cualquiera de los dos
+  // nombres para no romper si vuelve a cambiar el anterior, y si no se
+  // encuentra ninguno se tira un error claro en vez del TypeError críptico de
+  // antes ("Cannot read properties of undefined (reading '!ref')").
+  const ws = wb.Sheets['DESPACHOS'] || wb.Sheets['Despacho'];
+  if (!ws) {
+    throw new Error(
+      `No se encontro la hoja "Despacho"/"DESPACHOS" en el Excel. Hojas disponibles: ${Object.keys(wb.Sheets).join(', ')}`
+    );
+  }
   const { maxRow, maxCol } = sheetBounds(ws);
   const headers = [];
   for (let c = 1; c <= maxCol; c++) headers.push(hdrName(cellAt(ws, 2, c)));
