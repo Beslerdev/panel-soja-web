@@ -1844,7 +1844,7 @@ function aplicarFiltro(table) {
   const sumas = sumCols.map(() => 0);
 
   let total = 0, visibles = 0;
-  table.querySelectorAll('tbody tr').forEach(tr => {
+  Array.from(table.tBodies[0] ? table.tBodies[0].children : []).forEach(tr => {
     if (esFilaSinDatos(tr)) return;
     total++;
     let pasa = true;
