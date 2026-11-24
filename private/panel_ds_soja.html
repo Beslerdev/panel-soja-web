@@ -222,6 +222,13 @@
   table.data-table th:first-child, table.data-table td:first-child,
   table.data-table th:nth-child(2), table.data-table td:nth-child(2) { text-align: left; }
   table.wide-left th:nth-child(3), table.wide-left td:nth-child(3) { text-align: left; }
+  /* Pedido y Cliente a veces traen textos largos ("Pedido de Venta - Semillas - 139",
+     o razones sociales largas) que con nowrap estiraban el ancho de toda la tabla y
+     obligaban a desplazar hacia los costados para ver el resto de las columnas
+     (reportado en Comercial y en Estado de pedidos) -- se deja que esas dos columnas
+     envuelvan el texto en vez de forzar el ancho de toda la tabla. */
+  table.wide-left td:first-child { white-space: normal; word-break: break-word; max-width: 160px; }
+  table.wide-left td:nth-child(2) { white-space: normal; word-break: break-word; max-width: 200px; }
   table.data-table thead th { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--header-text); font-weight: 700; background: var(--table-head-bg); }
   table.data-table thead tr:first-child th:first-child { border-top-left-radius: 10px; }
   table.data-table thead tr:first-child th:last-child { border-top-right-radius: 10px; }
