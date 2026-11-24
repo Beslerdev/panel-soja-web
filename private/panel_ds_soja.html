@@ -728,6 +728,16 @@
     </div>
 
     <div class="panel">
+      <div class="panel-head"><div><h2>Pendiente de despacho por cliente</h2><div class="caption" id="captionPendientesCliente">Suma de Kg en líneas que todavía no están en estado "Despachado"</div></div></div>
+      <div class="table-scroll max-h">
+        <table class="data-table wide-left">
+          <thead><tr><th>Cliente</th><th>Variedades pendientes</th><th>Líneas pendientes</th><th data-sum data-sum-suffix=" kg">Kg pendiente</th><th data-sum data-sum-suffix=" kg">Kg total</th><th>% pendiente</th></tr></thead>
+          <tbody id="tablaPendientesCliente"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
       <div class="panel-head"><div><h2>Todas las líneas de pedido</h2><div class="caption" id="captionPedidosTabla"></div></div></div>
       <div class="table-scroll max-h">
         <table class="data-table wide-left">
@@ -1455,6 +1465,36 @@ function renderAll() {
       <td class="num">${fmt(p.kg)}</td><td>${p.lote_final || '—'}</td><td>${p.fecha_entrega || '—'}</td><td>${badge}</td>
     </tr>`;
   }).join('');
+
+  // Pendiente de despacho por cliente: mismo DATA.prodfinal de la tabla de
+  // arriba, agrupado por cliente en vez de por línea — para ver de un
+  // vistazo cuánto le queda retirar a cada uno (pedido 09/11/2026). Un
+  // cliente aparece acá solo si tiene Kg en líneas que todavía NO están en
+  // estado "1- Despachado"; si ya retiró todo, no sale en la lista.
+  const porClientePendiente = new Map();
+  for (const p of DATA.prodfinal) {
+    if (!porClientePendiente.has(p.cliente)) {
+      porClientePendiente.set(p.cliente, { cliente: p.cliente, variedadesPendientes: new Set(), lineasPendientes: 0, kgPendiente: 0, kgTotal: 0 });
+    }
+    const c = porClientePendiente.get(p.cliente);
+    c.kgTotal += p.kg;
+    if (p.estado !== '1- Despachado') {
+      c.kgPendiente += p.kg;
+      c.lineasPendientes += 1;
+      c.variedadesPendientes.add(p.variedad);
+    }
+  }
+  const pendientesCliente = Array.from(porClientePendiente.values())
+    .filter(c => c.kgPendiente > 0)
+    .sort((a, b) => b.kgPendiente - a.kgPendiente);
+  document.getElementById('captionPendientesCliente').textContent = pendientesCliente.length + ' clientes con pendiente de retiro';
+  document.getElementById('tablaPendientesCliente').innerHTML = pendientesCliente.map(c => {
+    const pct = c.kgTotal ? (c.kgPendiente / c.kgTotal) * 100 : 0;
+    return `<tr>
+    <td>${c.cliente}</td><td class="num">${c.variedadesPendientes.size}</td><td class="num">${c.lineasPendientes}</td>
+    <td class="num">${fmt(c.kgPendiente)}</td><td class="num">${fmt(c.kgTotal)}</td><td class="num">${fmt1(pct)}%</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">No hay pendientes de despacho — todo retirado</td></tr>';
 
   // ================= LOGISTICA =================
   const despachados = DATA.despachos.filter(d => d.estado === 'Despachado');
