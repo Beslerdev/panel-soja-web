@@ -230,6 +230,27 @@
   table.wide-left td:first-child { white-space: normal; word-break: break-word; max-width: 160px; }
   table.wide-left td:nth-child(2) { white-space: normal; word-break: break-word; max-width: 200px; }
   table.wide-left td:nth-child(3) { white-space: normal; word-break: break-word; max-width: 200px; }
+/* ---- Detalle por pedido y variedad (desplegable en "Pendiente de
+   despacho por cliente") -- un mismo pedido puede tener kg ya despachado
+   y kg pendiente al mismo tiempo (lotes de una variedad en estados
+   distintos), por eso puede salir "Parcial" ademas de "Sin retirar" o
+   "Retirado" (pedido 24/11/2026). */
+.btn-expand-cliente {
+display: inline-flex; align-items: center; justify-content: center;
+width: 18px; height: 18px; margin-right: 6px; padding: 0;
+border: 1px solid var(--border); border-radius: 5px; background: var(--surface-1);
+color: var(--text-secondary); font-size: 10px; line-height: 1; cursor: pointer;
+transition: transform .15s ease, color .15s ease, border-color .15s ease;
+}
+.btn-expand-cliente:hover { color: var(--text-primary); border-color: var(--text-muted); }
+tr.fila-cliente-pendiente.abierta .btn-expand-cliente { transform: rotate(90deg); }
+tr.fila-detalle-pendiente td { padding: 10px 12px 14px 34px; background: var(--page-plane); }
+table.mini-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+table.mini-table th, table.mini-table td { padding: 7px 10px; text-align: right; border-bottom: 1px solid var(--gridline); white-space: nowrap; }
+table.mini-table th:first-child, table.mini-table td:first-child,
+table.mini-table th:nth-child(2), table.mini-table td:nth-child(2) { text-align: left; }
+table.mini-table thead th { font-size: 9.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--header-text); font-weight: 700; background: var(--table-head-bg); }
+table.mini-table td.num { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
   table.data-table thead th { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--header-text); font-weight: 700; background: var(--table-head-bg); }
   table.data-table thead tr:first-child th:first-child { border-top-left-radius: 10px; }
   table.data-table thead tr:first-child th:last-child { border-top-right-radius: 10px; }
@@ -1472,6 +1493,7 @@ function renderAll() {
   // cliente aparece acá solo si tiene Kg en líneas que todavía NO están en
   // estado "1- Despachado"; si ya retiró todo, no sale en la lista.
   const porClientePendiente = new Map();
+  const detallePorCliente = new Map();
   for (const p of DATA.prodfinal) {
     if (!porClientePendiente.has(p.cliente)) {
       porClientePendiente.set(p.cliente, { cliente: p.cliente, variedadesPendientes: new Set(), lineasPendientes: 0, kgPendiente: 0, kgTotal: 0 });
@@ -1483,18 +1505,57 @@ function renderAll() {
       c.lineasPendientes += 1;
       c.variedadesPendientes.add(p.variedad);
     }
+    if (!detallePorCliente.has(p.cliente)) detallePorCliente.set(p.cliente, new Map());
+    const porPedido = detallePorCliente.get(p.cliente);
+    const pedidoNum = p.venta || p.vta_id || '—';
+    const keyPV = pedidoNum + '|' + p.variedad;
+    if (!porPedido.has(keyPV)) {
+      porPedido.set(keyPV, { pedido: pedidoNum, variedad: p.variedad, kgDespachado: 0, kgPendiente: 0, kgTotal: 0 });
+    }
+    const dpv = porPedido.get(keyPV);
+    dpv.kgTotal += p.kg;
+    if (p.estado === '1- Despachado') dpv.kgDespachado += p.kg; else dpv.kgPendiente += p.kg;
   }
   const pendientesCliente = Array.from(porClientePendiente.values())
     .filter(c => c.kgPendiente > 0)
     .sort((a, b) => b.kgPendiente - a.kgPendiente);
   document.getElementById('captionPendientesCliente').textContent = pendientesCliente.length + ' clientes con pendiente de retiro';
-  document.getElementById('tablaPendientesCliente').innerHTML = pendientesCliente.map(c => {
-    const pct = c.kgTotal ? (c.kgPendiente / c.kgTotal) * 100 : 0;
-    return `<tr>
-    <td>${c.cliente}</td><td class="num">${c.variedadesPendientes.size}</td><td class="num">${c.lineasPendientes}</td>
-    <td class="num">${fmt(c.kgPendiente)}</td><td class="num">${fmt(c.kgTotal)}</td><td class="num">${fmt1(pct)}%</td>
-    </tr>`;
-  }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">No hay pendientes de despacho — todo retirado</td></tr>';
+  document.getElementById('tablaPendientesCliente').innerHTML = pendientesCliente.map((c, idxCliente) => {
+  const pct = c.kgTotal ? (c.kgPendiente / c.kgTotal) * 100 : 0;
+  const detalleMapa = detallePorCliente.get(c.cliente) || new Map();
+  const detalleFilas = Array.from(detalleMapa.values())
+    .sort((a, b) => String(a.pedido).localeCompare(String(b.pedido)))
+    .map(d => {
+      let estadoHtml;
+      if (d.kgPendiente === 0) estadoHtml = '<span class="status-badge ok">Retirado</span>';
+      else if (d.kgDespachado === 0) estadoHtml = '<span class="status-badge warn">Sin retirar</span>';
+      else estadoHtml = '<span class="status-badge info">Parcial</span>';
+      return `<tr><td>${d.pedido}</td><td>${d.variedad}</td><td class="num">${fmt(d.kgDespachado)}</td><td class="num">${fmt(d.kgPendiente)}</td><td class="num">${fmt(d.kgTotal)}</td><td>${estadoHtml}</td></tr>`;
+    }).join('');
+  return `<tr class="fila-cliente-pendiente" data-idx-cliente="${idxCliente}">
+  <td><button type="button" class="btn-expand-cliente" aria-label="Ver detalle por pedido y variedad">▸</button>${c.cliente}</td><td class="num">${c.variedadesPendientes.size}</td><td class="num">${c.lineasPendientes}</td>
+  <td class="num">${fmt(c.kgPendiente)}</td><td class="num">${fmt(c.kgTotal)}</td><td class="num">${fmt1(pct)}%</td>
+  </tr>
+  <tr class="fila-detalle-pendiente oculto" data-idx-cliente="${idxCliente}">
+  <td colspan="6"><table class="mini-table"><thead><tr><th>Pedido</th><th>Variedad</th><th>Kg despachado</th><th>Kg pendiente</th><th>Kg total</th><th>Estado</th></tr></thead><tbody>${detalleFilas}</tbody></table></td>
+  </tr>`;
+}).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">No hay pendientes de despacho — todo retirado</td></tr>';
+const tablaPendCliente = document.getElementById('tablaPendientesCliente').closest('table');
+if (tablaPendCliente && !tablaPendCliente._toggleDetalleListo) {
+  tablaPendCliente.addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-expand-cliente');
+    if (!btn) return;
+    const fila = btn.closest('tr.fila-cliente-pendiente');
+    if (!fila) return;
+    const idxC = fila.getAttribute('data-idx-cliente');
+    const detalleFila = tablaPendCliente.querySelector('tr.fila-detalle-pendiente[data-idx-cliente="' + idxC + '"]');
+    if (!detalleFila) return;
+    const abrir = detalleFila.classList.contains('oculto');
+    detalleFila.classList.toggle('oculto', !abrir);
+    fila.classList.toggle('abierta', abrir);
+  });
+  tablaPendCliente._toggleDetalleListo = true;
+}
 
   // ================= LOGISTICA =================
   const despachados = DATA.despachos.filter(d => d.estado === 'Despachado');
