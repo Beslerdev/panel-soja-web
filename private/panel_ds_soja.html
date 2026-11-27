@@ -1932,6 +1932,11 @@ function prepararFiltros(table) {
     inp.placeholder = nombre;
     inp.autocomplete = 'off';
     inp.setAttribute('aria-label', 'Filtrar por ' + nombre);
+    // El casillero de filtro toma la alineacion del titulo de su columna
+    // (los numeros van a la derecha), asi el titulo, el casillero y el valor
+    // quedan sobre la misma linea vertical (pedido 27/11/2026).
+    const alineacionCol = getComputedStyle(th).textAlign;
+    if (alineacionCol === 'right' || alineacionCol === 'center') inp.style.textAlign = alineacionCol;
     inp.addEventListener('input', () => aplicarFiltro(table));
     inp.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') { inp.value = ''; aplicarFiltro(table); }
