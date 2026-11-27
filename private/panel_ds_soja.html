@@ -251,6 +251,22 @@ table.mini-table th:first-child, table.mini-table td:first-child,
 table.mini-table th:nth-child(2), table.mini-table td:nth-child(2) { text-align: left; }
 table.mini-table thead th { font-size: 9.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--header-text); font-weight: 700; background: var(--table-head-bg); }
 table.mini-table td.num { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+/* Alineacion de "Pendiente de despacho por cliente" y de su detalle: todo lo
+   que es numero va pegado a la derecha (titulo y valor sobre la misma linea
+   vertical) y solo los textos quedan a la izquierda. Se usa ">" para que las
+   reglas generales de table.wide-left no se filtren adentro de la tabla de
+   detalle: eso era lo que dejaba "Kg despachado" torcido a la izquierda
+   mientras "Kg pendiente" y "Kg total" iban a la derecha (pedido 27/11/2026). */
+table.tabla-pendientes > thead > tr > th:nth-child(n+2),
+table.tabla-pendientes > tbody > tr > td:nth-child(n+2) { text-align: right; }
+table.tabla-pendientes > tbody > tr > td:nth-child(2),
+table.tabla-pendientes > tbody > tr > td:nth-child(3) { white-space: nowrap; max-width: none; }
+table.mini-table > thead > tr > th:nth-child(-n+2),
+table.mini-table > tbody > tr > td:nth-child(-n+2) { text-align: left; }
+table.mini-table > thead > tr > th:nth-child(n+3),
+table.mini-table > tbody > tr > td:nth-child(n+3) { text-align: right; }
+table.mini-table > tbody > tr > td { white-space: nowrap; max-width: none; }
+table.mini-table > tbody > tr > td:nth-child(1) { white-space: normal; word-break: break-word; max-width: 230px; }
   table.data-table thead th { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--header-text); font-weight: 700; background: var(--table-head-bg); }
   table.data-table thead tr:first-child th:first-child { border-top-left-radius: 10px; }
   table.data-table thead tr:first-child th:last-child { border-top-right-radius: 10px; }
@@ -751,7 +767,7 @@ table.mini-table td.num { font-variant-numeric: tabular-nums; font-family: var(-
     <div class="panel">
       <div class="panel-head"><div><h2>Pendiente de despacho por cliente</h2><div class="caption" id="captionPendientesCliente">Suma de Kg en líneas que todavía no están en estado "Despachado"</div></div></div>
       <div class="table-scroll max-h">
-        <table class="data-table wide-left">
+        <table class="data-table wide-left tabla-pendientes">
           <thead><tr><th>Cliente</th><th>Variedades pendientes</th><th>Líneas pendientes</th><th data-sum data-sum-suffix=" kg">Kg pendiente</th><th data-sum data-sum-suffix=" kg">Kg total</th><th>% pendiente</th></tr></thead>
           <tbody id="tablaPendientesCliente"></tbody>
         </table>
